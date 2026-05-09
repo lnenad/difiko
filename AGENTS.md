@@ -1,0 +1,231 @@
+# AGENTS.md
+
+Context for AI coding agents working on this crate. Read once, then dive in.
+
+## What this is
+
+A self-contained Rust TUI for reviewing local git PRs. Single binary; talks
+directly to `git` via `tokio::process::Command`.
+
+## Build & test
+
+```sh
+cargo build           # debug
+cargo build --release # release
+cargo test            # unit + integration
+cargo test --lib      # unit only
+```
+
+The integration test in `tests/git_smoke.rs` runs against `~/projects/infra` if
+present and silently skips otherwise. Add new integration tests there or in
+sibling files.
+
+## Architecture in one paragraph
+
+A single `App` struct holds **all** UI and data state, dispatched by a
+`Screen` enum (`Setup`, `Review`, `Fullscreen`). Modals (branch picker, file
+filter, command palette, help overlay) are tracked as `Option<Modal>` on `App`
+and steal input when present. The event loop in `event::run` selects over
+three sources — terminal input, async git results, a 120ms tick — and renders
+once per event (not at fixed FPS). Key handling is split: `input::dispatch_key`
+is a pure `(App, KeyEvent) → Option<KeyAction>`, and `event::apply_action`
+mutates `App` and may spawn new git tasks. This keeps key logic testable.
+
+## Module map
+
+```
+src/
+├── main.rs            entry: clap parse → App::new → event::run
+├── lib.rs             re-exports modules so the integration test can see them
+├── app.rs             App struct, screen/pane/modal enums, all state
+├── cli.rs             clap derive
+├── event.rs           event loop, AppEvent, GitResult dispatch, apply_action
+├── tasks.rs           tokio::spawn helpers for git commands
+├── tree.rs            file path tree builder for the hierarchical sidebar
+├── model.rs           DiffLine, FileChange, FileStatus, Commit, sort_files
+├── persistence.rs     ProjectDirs JSON state, snapshot equality
+├── git/
+│   ├── mod.rs         public surface + ensure_git_repo
+│   ├── command.rs     run() / run_bytes() — tokio Command wrapper
+│   ├── branches.rs    `git branch --format`
+│   ├── commits.rs     `git log --pretty=format:%H%x1f...` parser
+│   ├── diff.rs        load_diff, load_commit_diff (uses `-z` name-status,
+│   │                  zips sections to entries by position)
+│   ├── parse.rs       split unified diff into per-file sections (positional)
+│   └── blame.rs       `git blame --porcelain` parser, SHA-1 + SHA-256 hashes
+├── ui/
+│   ├── mod.rs         render(frame, app) — dispatch on Screen, draw modals last
+│   ├── theme.rs       colors
+│   ├── status_bar.rs  top bar (always)
+│   ├── hint_bar.rs    bottom keybinding hints (context-aware)
+│   ├── setup.rs       Setup screen + completion dropdown overlay
+│   ├── review.rs      Review screen layout (sidebar | diff | commits)
+│   ├── sidebar.rs     flat + tree mode rendering
+│   ├── diff_view.rs   unified + split renderers, blame gutter
+│   ├── fullscreen.rs  fullscreen single-file view (reuses diff_view helpers)
+│   ├── commits_panel.rs
+│   ├── help.rs        `?` overlay
+│   ├── modal.rs       generic centered modal + render_picker + render_error
+│   └── toast.rs       transient bottom-right notifications
+└── input/
+    ├── mod.rs
+    └── bindings.rs    dispatch_key — match arms per (Screen, FocusedPane, Modal)
+```
+
+## Conventions
+
+- **Rust 2021**, dead code allowed at lib root (`#![allow(dead_code)]`).
+- **Comments**: prefer none. Only explain non-obvious *why* — e.g., why blame
+  uses compare ref, why Esc is intercepted before `global_key` in
+  `fullscreen_key`. Don't narrate what the code does.
+- **No emojis**. The status/sidebar markers (`✓`, `▶`, `▸`, `▾`, `│`) are
+  Unicode box-drawing/symbols, intentional and not "emoji".
+- **No new dependencies** unless genuinely needed. The deps list in
+  `Cargo.toml` is small on purpose.
+- **Tests** live next to the code in `#[cfg(test)] mod tests` for unit tests,
+  in `tests/` for integration.
+- **Keep `App` flat**. Don't introduce per-screen state structs unless state
+  truly doesn't cross screens. Many features (reviewed set, diff_scroll cache,
+  blame_cache, fullscreen_idx) span screens by design.
+
+## Adding a key binding
+
+1. Add a variant to `KeyAction` in `input/bindings.rs`.
+2. Map the key in the appropriate `*_key` function (`setup_key`, `review_key`,
+   `fullscreen_key`, or `modal_key`). Mind the dispatch order: in
+   `fullscreen_key` we explicitly intercept `q`/`Esc` *before* delegating to
+   `global_key`, otherwise `q` would be eaten as Quit. Apply the same pattern
+   when adding screen-specific overrides.
+3. Handle the action in `event::apply_action`.
+4. Update both `ui/hint_bar.rs` (context-aware) and `ui/help.rs` (overlay) so
+   the binding is discoverable.
+
+## Adding a git operation
+
+1. New module under `src/git/`. Use `command::run` (or `run_bytes` for binary
+   output). Return `anyhow::Result<T>`. Keep the function pure (input → output,
+   no side effects).
+2. Re-export from `git/mod.rs` if it'll be called from `tasks.rs`.
+3. Add a `spawn_*` helper in `tasks.rs` that runs the operation in
+   `tokio::spawn` and forwards the result through the existing `mpsc` channel
+   as a new `GitResultKind::Foo` variant.
+4. Handle the new variant in `event::handle_git_result`. Always check
+   `result.req_id` against `app.req_ids.foo` to drop stale results — older
+   in-flight results from before a navigation must not stomp current state.
+5. Increment `app.req_ids.foo` and set `app.pending.foo = true` everywhere you
+   spawn the operation.
+
+For data that's per-file rather than per-(base, compare) — like blame — skip
+the req_id staleness check and use a `HashSet<key>` for in-flight dedup
+instead. See `app.blame_pending` for the pattern.
+
+## Async / staleness
+
+The pattern is everywhere; understand it once:
+
+- Each kind of git op has a monotonic `u64` counter on `App.req_ids`.
+- Spawning bumps the counter and stores it; `tasks::spawn_*` includes the id
+  in the result.
+- `event::handle_git_result` ignores the result if the id doesn't match the
+  current counter. This means rapid navigation never lands stale data.
+- `app.pending.*` flags drive the loading spinner in the status bar.
+
+## UI layout & z-order
+
+- `ui::render` dispatches on `Screen`, then draws any active `Modal` last,
+  then `toast::render`.
+- Within a screen, **whatever you draw last wins on overlap**. The Setup
+  completion dropdown was originally drawn from inside `render_repo_input` and
+  got painted over by the branch pickers; we now draw it in
+  `setup::render` *after* every other widget. If you add an overlay-style
+  widget, do the same.
+
+## Persistence
+
+- One JSON file at `ProjectDirs::data_dir().join("state.json")` (project id
+  `dev.local.difiko`).
+- Schema:
+  ```json
+  {
+    "version": 1,
+    "entries": {
+      "<repo>::<base>::<compare>": {
+        "snapshot": "<sha256>",
+        "reviewed_files": [...]
+      }
+    }
+  }
+  ```
+- `snapshot` is `sha256` of sorted file paths. Mismatch → reviewed set is
+  considered invalid and an empty set is loaded. This avoids stale state
+  surviving force-pushes that change the file list.
+- Writes go to a `.tmp` sibling and are renamed into place — partial writes
+  can't corrupt the file. On parse failure at load, the bad file is renamed
+  to `state.json.broken-<unix-ts>` and a fresh state is started; a toast
+  surfaces the rename.
+- Save points: review-toggle, `ClearReviewed` (after the second-press
+  confirmation), `SetupReset`, and end-of-loop. The end-of-loop save is
+  guarded against the early-quit case (no diff arrived yet) so it can't
+  trample valid prior state with an empty file list.
+
+## Common gotchas (real bugs we hit)
+
+- **Scroll lookup in fullscreen**: `scroll_diff` originally looked up the file
+  via `app.current_file()` (sidebar selection), but the fullscreen renderer
+  reads scroll keyed on `fullscreen_idx`'s file. They can be different files
+  → counter never updates the visible one. Always branch on `app.screen` for
+  file lookup in scroll-related code.
+- **`q` in fullscreen**: `global_key` returns `Quit` for `q`; `fullscreen_key`
+  must check for `q`/`Esc` *before* falling through to `global_key`, otherwise
+  `q` kills the app instead of exiting fullscreen.
+- **Esc**: two-stage stack across screens.
+  - Modals intercept Esc first → close the modal.
+  - Fullscreen → Review (`ExitFullscreen`).
+  - Review → Setup with Compare focused, *state preserved* (`BackToSetupSoft`).
+  - Setup → full reset, focus Repo (`SetupReset`).
+  - `BackToSetupSoft` bumps `req_ids.diff/commits/commit_diff` so any
+    in-flight load can't auto-flip the user back to Review.
+  - Don't add a path that turns Esc into Quit anywhere.
+- **`r` in setup**: `r` only toggles the remote-branches flag when the Remote
+  field is focused. On the Repo field, `r` is just a typeable character.
+- **Branch picker sequencing**: on the Setup screen, accepting Base
+  immediately opens the Compare picker (forces the user through compare
+  before loading). Picking from the Review screen via `B` doesn't have this
+  forced step.
+- **Branch preselection**: `handle_git_result::Branches` preselects
+  `base_branch`/`compare_branch` only when they're `None`. When the Repo
+  path actually changes via Setup, `handle_setup_submit` clears both so the
+  new repo's branches re-trigger preselection — without that clear, the old
+  repo's choices survive and prevent any preselection on the new repo.
+- **Clear-reviewed confirmation**: `R` requires two presses within 2s; the
+  first sets `App.pending_clear_reviewed = Some(Instant::now())` and toasts
+  a prompt. The check is purely time-based, so it self-expires — no need
+  to clear it on unrelated keystrokes.
+- **Picker selected index**: `Picker::with_selected` positions the cursor on
+  the current branch when opening branch pickers. Use it instead of
+  `Picker::new` for branch pickers; the modal renderer adds a `▶ ` prefix
+  via `highlight_symbol` so the selection is unmistakable.
+- **Horizontal scroll**: `App.diff_scroll_h` is keyed per-file just like
+  `diff_scroll`. Both unified and split renderers use it; the unified view
+  intentionally doesn't `Wrap`, so long lines stay on one line and require
+  `h`/`l` to scroll right.
+- **Build vs lib**: `main.rs` and `lib.rs` both expose the same modules.
+  `main.rs` does `use difiko::{app, cli, event}` so integration tests can
+  also see internals.
+
+## Where to start for common tasks
+
+| Task                              | Open                                                |
+| --------------------------------- | --------------------------------------------------- |
+| Add a key binding                 | `src/input/bindings.rs` then `src/event.rs`         |
+| Add an action                     | `KeyAction` enum + `apply_action` match arm         |
+| Tweak diff colors / row layout    | `src/ui/diff_view.rs`                               |
+| Tweak split-diff column behavior  | `src/ui/diff_view.rs::build_split_lines` (shared by |
+|                                   | review + fullscreen)                                |
+| Add a new git command             | `src/git/<new>.rs` + `src/tasks.rs` + event handler |
+| Add a new screen                  | `Screen` enum + `ui::render` dispatch + key fn      |
+| Add a new modal                   | `Modal` enum + `ui::mod.rs` dispatch + key handling |
+| Tweak persistence schema          | bump `SCHEMA_VERSION` in `persistence.rs`; add a    |
+|                                   | migration on load and a test                        |
+| Tweak setup-screen UX             | `src/ui/setup.rs` + repo-completion methods on App  |
+| Tweak header / breathing room     | `ui/review.rs` + `ui/fullscreen.rs` outer Layout    |

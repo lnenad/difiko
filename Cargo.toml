@@ -1,0 +1,33 @@
+[package]
+name = "difiko"
+version = "0.1.0"
+edition = "2021"
+description = "Keyboard-driven TUI for reviewing local git PRs"
+
+[lib]
+name = "difiko"
+path = "src/lib.rs"
+
+[[bin]]
+name = "difiko"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = { version = "0.28", features = ["event-stream"] }
+tokio = { version = "1.42", features = ["macros", "rt-multi-thread", "process", "sync", "time", "fs", "io-util"] }
+tokio-stream = "0.1"
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+clap = { version = "4.5", features = ["derive"] }
+directories = "5"
+nucleo-matcher = "0.3"
+unicode-width = "0.2"
+sha2 = "0.10"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
