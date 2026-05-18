@@ -618,6 +618,10 @@ impl App {
             return None;
         }
         let r = self.compare_branch.as_ref()?.clone();
+        // The working-tree pseudo-ref isn't a real git ref. Blame the HEAD
+        // contents instead so users still see committed authorship; lines
+        // added since HEAD simply won't have blame data, which is fine.
+        let r = if crate::git::is_working_tree(&r) { "HEAD".to_string() } else { r };
         Some((r, file.path.clone()))
     }
 }

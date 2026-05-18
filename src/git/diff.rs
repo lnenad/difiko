@@ -4,8 +4,46 @@ use anyhow::Result;
 use std::path::Path;
 
 pub async fn load_diff(repo: &Path, base: &str, compare: &str) -> Result<Vec<FileChange>> {
+    if super::is_working_tree(compare) {
+        return load_working_tree_diff(repo, base).await;
+    }
     let range = format!("{base}...{compare}");
     load_diff_for_range(repo, &range).await
+}
+
+/// Diff working tree (uncommitted on-disk state, staged + unstaged) against
+/// `base`. Equivalent to `git diff <base>` — no `--cached`, no triple-dot.
+async fn load_working_tree_diff(repo: &Path, base: &str) -> Result<Vec<FileChange>> {
+    let name_status = command::run(repo, &["diff", "--name-status", "-z", base, "--"]).await?;
+    let entries = parse_name_status_z(&name_status);
+    if entries.is_empty() {
+        return Ok(Vec::new());
+    }
+    let full_diff = command::run(
+        repo,
+        &["-c", "core.quotePath=false", "diff", base, "--"],
+    )
+    .await?;
+    let sections = parse::split_diff_into_sections(&full_diff);
+    let mut files: Vec<FileChange> = entries
+        .into_iter()
+        .enumerate()
+        .map(|(i, e)| {
+            let lines = sections.get(i).cloned().unwrap_or_default();
+            let (additions, deletions, binary) = parse::count_changes(&lines);
+            FileChange {
+                path: e.new_path,
+                old_path: e.old_path,
+                status: e.status,
+                diff_lines: lines,
+                additions,
+                deletions,
+                binary,
+            }
+        })
+        .collect();
+    sort_files(&mut files);
+    Ok(files)
 }
 
 pub async fn load_commit_diff(repo: &Path, commit: &str) -> Result<Vec<FileChange>> {

@@ -32,9 +32,18 @@ CLI flags:
 | `--file <PATH>`         | Auto-select this file in the sidebar on launch.             |
 | `--fullscreen`          | Open `--file` in fullscreen mode immediately.               |
 | `--no-remote-branches`  | Hide remote-tracking branches from the picker.              |
+| `--new-window` / `-w`   | Re-launch in a new terminal window and exit this process.   |
 
 If `--repo`, `--base`, and `--compare` are all valid, the Setup screen is
 skipped and the diff loads immediately.
+
+### Working-tree compare
+
+The Compare branch picker has a `[working tree]` entry pinned at the top.
+Pick it to diff your **uncommitted on-disk state** (staged + unstaged) against
+the chosen base — useful for reviewing changes before committing. The Commits
+panel is empty in this mode (working tree has no commits by definition); blame
+falls back to `HEAD`.
 
 ## Build
 

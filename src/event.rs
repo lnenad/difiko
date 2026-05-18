@@ -426,9 +426,10 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
                 BranchSlot::Base => app.base_branch.as_deref(),
                 BranchSlot::Compare => app.compare_branch.as_deref(),
             };
+            let items = picker_items_for(app, slot);
             app.modal = Some(Modal::BranchPicker {
                 which: slot,
-                picker: crate::app::Picker::with_selected(app.branches.clone(), current),
+                picker: crate::app::Picker::with_selected(items, current),
             });
         }
         ToggleSidebarMode => {
@@ -785,10 +786,11 @@ fn handle_modal_accept(app: &mut App, modal: Modal, tx: &UnboundedSender<AppEven
                 if matches!(app.screen, Screen::Setup) && just_picked_base {
                     // Force the user through the compare step before loading.
                     app.setup_field = crate::app::SetupField::Compare;
+                    let items = picker_items_for(app, BranchSlot::Compare);
                     app.modal = Some(Modal::BranchPicker {
                         which: BranchSlot::Compare,
                         picker: crate::app::Picker::with_selected(
-                            app.branches.clone(),
+                            items,
                             app.compare_branch.as_deref(),
                         ),
                     });
@@ -816,10 +818,11 @@ fn handle_modal_accept(app: &mut App, modal: Modal, tx: &UnboundedSender<AppEven
 fn run_command(app: &mut App, cmd: &str, tx: &UnboundedSender<AppEvent>) {
     match cmd {
         "branches" => {
+            let items = picker_items_for(app, BranchSlot::Compare);
             app.modal = Some(Modal::BranchPicker {
                 which: BranchSlot::Compare,
                 picker: crate::app::Picker::with_selected(
-                    app.branches.clone(),
+                    items,
                     app.compare_branch.as_deref(),
                 ),
             });
@@ -936,6 +939,21 @@ fn ensure_blame_for_visible(app: &mut App, tx: &UnboundedSender<AppEvent>) {
     }
     app.blame_pending.insert(target.clone());
     tasks::spawn_load_blame(tx.clone(), repo, target.0, target.1);
+}
+
+/// Items shown in the branch fuzzy-picker for a given slot. The Compare slot
+/// gets a `[working tree]` pseudo-ref pinned at the top so users can review
+/// uncommitted changes against any base.
+fn picker_items_for(app: &App, slot: BranchSlot) -> Vec<String> {
+    match slot {
+        BranchSlot::Compare => {
+            let mut items = Vec::with_capacity(app.branches.len() + 1);
+            items.push(crate::git::WORKING_TREE_REF.to_string());
+            items.extend(app.branches.iter().cloned());
+            items
+        }
+        BranchSlot::Base => app.branches.clone(),
+    }
 }
 
 fn kick_off_load_branches(app: &mut App, tx: &UnboundedSender<AppEvent>) {

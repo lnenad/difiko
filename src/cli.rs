@@ -27,4 +27,8 @@ pub struct Cli {
     /// Hide remote-tracking branches from the branch picker.
     #[arg(long, default_value_t = false)]
     pub no_remote_branches: bool,
+
+    /// Re-launch difiko in a new terminal window and exit the current process.
+    #[arg(long, short = 'w', default_value_t = false)]
+    pub new_window: bool,
 }

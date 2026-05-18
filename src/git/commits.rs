@@ -6,6 +6,10 @@ use std::path::Path;
 const FORMAT: &str = "--pretty=format:%H%x1f%h%x1f%an%x1f%ad%x1f%s%x1f%b%x1e";
 
 pub async fn load_commits(repo: &Path, base: &str, compare: &str) -> Result<Vec<Commit>> {
+    if super::is_working_tree(compare) {
+        // Working tree has no commits between itself and base by definition.
+        return Ok(Vec::new());
+    }
     let range = format!("{base}..{compare}");
     let stdout = command::run(repo, &["log", "--date=short", FORMAT, &range, "--"]).await?;
     Ok(parse_commits(&stdout))

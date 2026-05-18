@@ -366,6 +366,7 @@ mod tests {
             file: None,
             fullscreen: false,
             no_remote_branches: false,
+            new_window: false,
         };
         App::new(&cli)
     }
