@@ -43,7 +43,17 @@ pub fn render(f: &mut Frame, app: &App) {
     }
     f.render_widget(Paragraph::new(Line::from(header_spans)), outer[0]);
 
-    let body_area = outer[2];
+    let body_full = outer[2];
+    let (body_area, search_area) = if app.diff_search.is_some() && body_full.height >= 2 {
+        let parts = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .split(body_full);
+        (parts[0], Some(parts[1]))
+    } else {
+        (body_full, None)
+    };
+    app.diff_view_height.set(body_area.height);
     let scroll = *app.diff_scroll.get(&file.path).unwrap_or(&0);
     let scroll_h = *app.diff_scroll_h.get(&file.path).unwrap_or(&0);
     match app.diff_mode {
@@ -51,6 +61,9 @@ pub fn render(f: &mut Frame, app: &App) {
         DiffMode::Split => {
             render_split_inline(f, app, file, scroll, scroll_h, body_area);
         }
+    }
+    if let (Some(area), Some(s)) = (search_area, app.diff_search.as_ref()) {
+        diff_view::render_search_bar(f, area, s);
     }
 
     hint_bar::render(f, app, outer[3]);
@@ -65,7 +78,7 @@ fn render_unified_inline(
     area: ratatui::layout::Rect,
 ) {
     let blame = diff_view::blame_for(app, file);
-    let lines = diff_view::build_unified_lines(file, blame);
+    let lines = diff_view::build_unified_lines(file, blame, app.diff_search.as_ref());
     let p = Paragraph::new(lines).scroll((scroll, scroll_h));
     f.render_widget(p, area);
 }
@@ -84,7 +97,7 @@ fn render_split_inline(
         .split(area);
 
     let blame = diff_view::blame_for(app, file);
-    let (left, right) = diff_view::build_split_lines(file, blame);
+    let (left, right) = diff_view::build_split_lines(file, blame, app.diff_search.as_ref());
     let lp = Paragraph::new(left).scroll((scroll, scroll_h));
     let rp = Paragraph::new(right).scroll((scroll, scroll_h));
     f.render_widget(lp, cols[0]);

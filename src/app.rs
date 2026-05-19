@@ -6,6 +6,148 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::time::Instant;
 
+/// Map a match's `diff_lines` index to the actual rendered-row index for the
+/// current diff mode. The diff vector includes header entries (GitHeader,
+/// IndexHeader, OldFile, NewFile) that produce no rendered row, and in split
+/// mode adjacent dels/adds are paired into shared rows. Without this
+/// translation, scroll math drifts and the match lands off-screen.
+pub(crate) fn rendered_row_for_match(
+    file: &crate::model::FileChange,
+    mode: DiffMode,
+    target: usize,
+) -> usize {
+    use crate::model::DiffLine;
+    let mut rendered = 0usize;
+    match mode {
+        DiffMode::Unified => {
+            for (i, dl) in file.diff_lines.iter().enumerate() {
+                if i == target {
+                    return rendered;
+                }
+                match dl {
+                    DiffLine::GitHeader(_)
+                    | DiffLine::IndexHeader(_)
+                    | DiffLine::OldFile(_)
+                    | DiffLine::NewFile(_) => continue,
+                    _ => rendered += 1,
+                }
+            }
+            rendered
+        }
+        DiffMode::Split => {
+            let mut pending_del = 0usize;
+            let mut pending_add = 0usize;
+            for (i, dl) in file.diff_lines.iter().enumerate() {
+                let on_target = i == target;
+                match dl {
+                    DiffLine::Hunk { .. } | DiffLine::Context(_) => {
+                        // Pending del/add rows render before this row.
+                        rendered += pending_del.max(pending_add);
+                        pending_del = 0;
+                        pending_add = 0;
+                        if on_target {
+                            return rendered;
+                        }
+                        rendered += 1;
+                    }
+                    DiffLine::Del(_) => {
+                        if on_target {
+                            return rendered + pending_del;
+                        }
+                        pending_del += 1;
+                    }
+                    DiffLine::Add(_) => {
+                        if on_target {
+                            return rendered + pending_add;
+                        }
+                        pending_add += 1;
+                    }
+                    _ => {
+                        if on_target {
+                            return rendered;
+                        }
+                    }
+                }
+            }
+            rendered + pending_del.max(pending_add)
+        }
+    }
+}
+
+/// Count of rendered rows for the file in the given mode. Mirrors the
+/// renderer's filtering (skips header pseudo-lines) and the split-mode
+/// del/add pairing. Used to clamp scroll so we don't store a position past
+/// the end of the content.
+pub(crate) fn total_rendered_rows(file: &crate::model::FileChange, mode: DiffMode) -> usize {
+    use crate::model::DiffLine;
+    match mode {
+        DiffMode::Unified => file
+            .diff_lines
+            .iter()
+            .filter(|dl| {
+                !matches!(
+                    dl,
+                    DiffLine::GitHeader(_)
+                        | DiffLine::IndexHeader(_)
+                        | DiffLine::OldFile(_)
+                        | DiffLine::NewFile(_)
+                )
+            })
+            .count(),
+        DiffMode::Split => {
+            let mut total = 0usize;
+            let mut pending_del = 0usize;
+            let mut pending_add = 0usize;
+            for dl in &file.diff_lines {
+                match dl {
+                    DiffLine::Hunk { .. } | DiffLine::Context(_) => {
+                        total += pending_del.max(pending_add);
+                        pending_del = 0;
+                        pending_add = 0;
+                        total += 1;
+                    }
+                    DiffLine::Del(_) => pending_del += 1,
+                    DiffLine::Add(_) => pending_add += 1,
+                    _ => {}
+                }
+            }
+            total + pending_del.max(pending_add)
+        }
+    }
+}
+
+/// Substring search returning byte ranges. In case-insensitive mode the
+/// comparison is ASCII-only — non-ASCII bytes are compared byte-for-byte
+/// (so "é" only matches "é"). Returned offsets are guaranteed to fall on
+/// UTF-8 char boundaries so they can be used directly to slice `hay`.
+fn find_all_substr(hay: &str, needle: &[u8], case_sensitive: bool) -> Vec<(usize, usize)> {
+    let mut out = Vec::new();
+    if needle.is_empty() || needle.len() > hay.len() {
+        return out;
+    }
+    let h = hay.as_bytes();
+    let mut i = 0;
+    while i + needle.len() <= h.len() {
+        let bytes_match = h[i..i + needle.len()]
+            .iter()
+            .zip(needle)
+            .all(|(a, b)| {
+                if case_sensitive {
+                    a == b
+                } else {
+                    a.eq_ignore_ascii_case(b)
+                }
+            });
+        let on_boundary =
+            hay.is_char_boundary(i) && hay.is_char_boundary(i + needle.len());
+        if bytes_match && on_boundary {
+            out.push((i, i + needle.len()));
+        }
+        i += 1;
+    }
+    out
+}
+
 fn split_path_for_completion(buf: &str) -> Option<(PathBuf, String)> {
     if buf.is_empty() {
         let cwd = std::env::current_dir().ok()?;
@@ -242,6 +384,23 @@ pub enum Modal {
     Error { message: String },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DiffMatch {
+    /// Index into the current file's `diff_lines`.
+    pub line: usize,
+    /// Byte offsets into the diff line's text content (excluding gutters).
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct DiffSearch {
+    pub query: TextInput,
+    pub matches: Vec<DiffMatch>,
+    pub current: usize,
+    pub case_sensitive: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct Toast {
     pub message: String,
@@ -315,6 +474,13 @@ pub struct App {
     pub blame_pending: std::collections::HashSet<(String, String)>,
 
     pub fullscreen_idx: usize,
+
+    /// Last rendered diff body height in rows. Updated each frame by the diff
+    /// renderer; used by search-scroll to keep the active match on-screen.
+    /// Interior-mutable so renderers (which see `&App`) can update it.
+    pub diff_view_height: std::cell::Cell<u16>,
+
+    pub diff_search: Option<DiffSearch>,
 
     pub pending: PendingOps,
     pub req_ids: ReqIds,
@@ -396,6 +562,10 @@ impl App {
             blame_pending: std::collections::HashSet::new(),
 
             fullscreen_idx: 0,
+
+            diff_view_height: std::cell::Cell::new(0),
+
+            diff_search: None,
 
             pending: PendingOps::default(),
             req_ids: ReqIds::default(),
@@ -611,6 +781,76 @@ impl App {
         self.files.iter().map(|f| f.deletions).sum()
     }
 
+    /// File currently visible in the diff panel (respects Review vs Fullscreen).
+    pub fn diff_visible_file(&self) -> Option<&crate::model::FileChange> {
+        match self.screen {
+            Screen::Fullscreen => self.files.get(self.fullscreen_idx),
+            _ => self.current_file(),
+        }
+    }
+
+    /// Recompute search matches against the visible file's diff_lines. ASCII
+    /// case-insensitive — non-ASCII byte sequences only match exactly. Keeps
+    /// `current` valid (clamped to the new match count, or 0 if empty).
+    pub fn recompute_diff_search(&mut self) {
+        let Some((query, case_sensitive)) = self
+            .diff_search
+            .as_ref()
+            .map(|s| (s.query.buffer.clone(), s.case_sensitive))
+        else {
+            return;
+        };
+        let mut matches: Vec<DiffMatch> = Vec::new();
+        if !query.is_empty() {
+            let file_idx = match self.screen {
+                Screen::Fullscreen => Some(self.fullscreen_idx),
+                _ => self.current_file_index(),
+            };
+            if let Some(file) = file_idx.and_then(|i| self.files.get(i)) {
+                let needle = query.as_bytes();
+                for (i, dl) in file.diff_lines.iter().enumerate() {
+                    let text: &str = match dl {
+                        crate::model::DiffLine::Add(t)
+                        | crate::model::DiffLine::Del(t)
+                        | crate::model::DiffLine::Context(t) => t,
+                        crate::model::DiffLine::Hunk { header, .. } => header,
+                        _ => continue,
+                    };
+                    for (s, e) in find_all_substr(text, needle, case_sensitive) {
+                        matches.push(DiffMatch { line: i, start: s, end: e });
+                    }
+                }
+            }
+        }
+        let search = self.diff_search.as_mut().unwrap();
+        let prev_count = search.matches.len();
+        search.matches = matches;
+        if search.matches.is_empty() {
+            search.current = 0;
+        } else if prev_count == 0 || search.current >= search.matches.len() {
+            search.current = 0;
+        }
+    }
+
+    /// Scroll the visible diff so the current match sits in the middle of
+    /// the panel. Near the top/bottom of the diff we let natural clamping
+    /// (against 0 and `total - height`) keep the diff from scrolling past
+    /// its content, so matches there stay near the edge instead of leaving
+    /// empty space.
+    pub fn scroll_to_current_match(&mut self) {
+        let Some(search) = self.diff_search.as_ref() else { return };
+        let Some(m) = search.matches.get(search.current).copied() else { return };
+        let Some(file) = self.diff_visible_file() else { return };
+        let path = file.path.clone();
+        let rendered = rendered_row_for_match(file, self.diff_mode, m.line) as i32;
+        let height = self.diff_view_height.get().max(4) as i32;
+        let total = total_rendered_rows(file, self.diff_mode) as i32;
+        let max_scroll = (total - height).max(0);
+        let centered = rendered - height / 2;
+        let new = centered.max(0).min(max_scroll);
+        self.diff_scroll.insert(path, new as u16);
+    }
+
     /// Returns the (ref, file_path) pair to look up blame for the given file, if any.
     /// For deletions we'd need base ref blame — skipped in MVP, returns None.
     pub fn blame_target_for(&self, file: &crate::model::FileChange) -> Option<(String, String)> {
@@ -659,6 +899,102 @@ mod tests {
         t.backspace();
         assert_eq!(t.buffer, "hll");
         assert_eq!(t.cursor, 1);
+    }
+
+    #[test]
+    fn find_all_substr_ci_finds_overlapping_and_case_insensitive() {
+        let hits = find_all_substr("Foo foo FOO", b"foo", false);
+        assert_eq!(hits, vec![(0, 3), (4, 7), (8, 11)]);
+    }
+
+    #[test]
+    fn find_all_substr_case_sensitive_filters() {
+        let hits = find_all_substr("Foo foo FOO", b"foo", true);
+        assert_eq!(hits, vec![(4, 7)]);
+    }
+
+    #[test]
+    fn find_all_substr_returns_char_boundary_offsets() {
+        // Non-ASCII bytes in haystack — needle is ASCII so it can only match
+        // inside the ASCII region and must land on char boundaries.
+        // "café" is 5 bytes (é is 2 bytes), then " bar" — "bar" starts at byte 6.
+        let hits = find_all_substr("café bar", b"bar", false);
+        assert_eq!(hits, vec![(6, 9)]);
+        // Ensure slicing at returned offsets does not panic.
+        assert_eq!(&"café bar"[6..9], "bar");
+    }
+
+    #[test]
+    fn rendered_row_skips_unrendered_headers_in_unified() {
+        use crate::model::{DiffLine, FileChange, FileStatus};
+        let file = FileChange {
+            path: "a".into(),
+            old_path: None,
+            status: FileStatus::Modified,
+            // Two header lines that don't render, then Hunk + Context — the
+            // match on diff_line index 3 should map to rendered row 1.
+            diff_lines: vec![
+                DiffLine::GitHeader("diff --git ...".into()),
+                DiffLine::IndexHeader("index ...".into()),
+                DiffLine::Hunk {
+                    header: "@@".into(),
+                    old_start: 1,
+                    old_count: 1,
+                    new_start: 1,
+                    new_count: 1,
+                },
+                DiffLine::Context("x".into()),
+            ],
+            additions: 0,
+            deletions: 0,
+            binary: false,
+        };
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Unified, 2), 0);
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Unified, 3), 1);
+    }
+
+    #[test]
+    fn rendered_row_pairs_del_and_add_in_split() {
+        use crate::model::{DiffLine, FileChange, FileStatus};
+        let file = FileChange {
+            path: "a".into(),
+            old_path: None,
+            status: FileStatus::Modified,
+            // Hunk row, then Del,Del,Add — pairs into 2 rows. A match on the
+            // second Add (diff index 4) is on the right pane row index 1
+            // counting from after the hunk row, i.e. rendered row 2.
+            diff_lines: vec![
+                DiffLine::Hunk {
+                    header: "@@".into(),
+                    old_start: 1,
+                    old_count: 1,
+                    new_start: 1,
+                    new_count: 1,
+                },
+                DiffLine::Del("a".into()),
+                DiffLine::Del("b".into()),
+                DiffLine::Add("c".into()),
+                DiffLine::Add("d".into()),
+                DiffLine::Context("e".into()),
+            ],
+            additions: 2,
+            deletions: 2,
+            binary: false,
+        };
+        // Hunk renders at row 0. First Del row 1, second Del row 2.
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Split, 1), 1);
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Split, 2), 2);
+        // First Add row 1 (right pane), second Add row 2.
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Split, 3), 1);
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Split, 4), 2);
+        // Context is after the 2-row del/add block — row 3.
+        assert_eq!(rendered_row_for_match(&file, DiffMode::Split, 5), 3);
+    }
+
+    #[test]
+    fn find_all_substr_empty_needle_returns_nothing() {
+        let hits = find_all_substr("anything", b"", false);
+        assert!(hits.is_empty());
     }
 
     #[test]

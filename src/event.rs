@@ -736,6 +736,63 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
         ModalMoveDown => modal_move(app, 1),
         ModalInputChar(c) => modal_input(app, ModalInputOp::Insert(c)),
         ModalInputBackspace => modal_input(app, ModalInputOp::Backspace),
+
+        DiffSearchOpen => {
+            if app.diff_search.is_none() {
+                app.diff_search = Some(crate::app::DiffSearch::default());
+            }
+            app.focused = FocusedPane::Diff;
+        }
+        DiffSearchClose => {
+            app.diff_search = None;
+        }
+        DiffSearchInput(c) => {
+            if let Some(search) = app.diff_search.as_mut() {
+                search.query.insert(c);
+            }
+            app.recompute_diff_search();
+            app.scroll_to_current_match();
+        }
+        DiffSearchBackspace => {
+            if let Some(search) = app.diff_search.as_mut() {
+                search.query.backspace();
+            }
+            app.recompute_diff_search();
+            app.scroll_to_current_match();
+        }
+        DiffSearchNext => {
+            if let Some(search) = app.diff_search.as_mut() {
+                if !search.matches.is_empty() {
+                    search.current = (search.current + 1) % search.matches.len();
+                }
+            }
+            app.scroll_to_current_match();
+        }
+        DiffSearchPrev => {
+            if let Some(search) = app.diff_search.as_mut() {
+                if !search.matches.is_empty() {
+                    if search.current == 0 {
+                        search.current = search.matches.len() - 1;
+                    } else {
+                        search.current -= 1;
+                    }
+                }
+            }
+            app.scroll_to_current_match();
+        }
+        DiffSearchToggleCase => {
+            if let Some(search) = app.diff_search.as_mut() {
+                search.case_sensitive = !search.case_sensitive;
+            }
+            app.recompute_diff_search();
+            app.scroll_to_current_match();
+        }
+    }
+    // The visible file (and thus the match set) may have changed for actions
+    // like NextFile, CommitsToggleSelect, modal file pick, etc. Cheap to
+    // recompute against the current diff lines and keeps matches in sync.
+    if app.diff_search.is_some() {
+        app.recompute_diff_search();
     }
 }
 

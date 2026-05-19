@@ -71,16 +71,73 @@ pub enum KeyAction {
     ModalMoveDown,
     ModalInputChar(char),
     ModalInputBackspace,
+
+    DiffSearchOpen,
+    DiffSearchClose,
+    DiffSearchInput(char),
+    DiffSearchBackspace,
+    DiffSearchNext,
+    DiffSearchPrev,
+    DiffSearchToggleCase,
 }
 
 pub fn dispatch_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
     if app.modal.is_some() {
         return modal_key(app, key);
     }
+    // Diff search bar — active in Review (when Diff is focused) and Fullscreen.
+    // Captures most input so typing edits the query rather than triggering
+    // scroll/file shortcuts. Ctrl+C still quits.
+    if app.diff_search.is_some()
+        && !matches!(app.screen, Screen::Setup)
+        && (matches!(app.screen, Screen::Fullscreen)
+            || matches!(app.focused, crate::app::FocusedPane::Diff))
+    {
+        if let Some(action) = diff_search_key(key) {
+            return Some(action);
+        }
+    }
     match app.screen {
         Screen::Setup => setup_key(app, key),
         Screen::Review => review_key(app, key),
         Screen::Fullscreen => fullscreen_key(key),
+    }
+}
+
+fn diff_search_key(key: KeyEvent) -> Option<KeyAction> {
+    if ctrl(&key, 'c') {
+        return Some(KeyAction::Quit);
+    }
+    // Alt+C toggles case sensitivity (matches VS Code's find binding).
+    if key.modifiers.contains(KeyModifiers::ALT) && key.code == KeyCode::Char('c') {
+        return Some(KeyAction::DiffSearchToggleCase);
+    }
+    // Ctrl+F again jumps to next match (cycling within the open bar).
+    if ctrl(&key, 'f') || ctrl(&key, 'g') || ctrl(&key, 'n') {
+        return Some(KeyAction::DiffSearchNext);
+    }
+    if ctrl(&key, 'p') {
+        return Some(KeyAction::DiffSearchPrev);
+    }
+    match key.code {
+        KeyCode::Esc => Some(KeyAction::DiffSearchClose),
+        KeyCode::Enter => {
+            if key.modifiers.contains(KeyModifiers::SHIFT) {
+                Some(KeyAction::DiffSearchPrev)
+            } else {
+                Some(KeyAction::DiffSearchNext)
+            }
+        }
+        KeyCode::F(3) => {
+            if key.modifiers.contains(KeyModifiers::SHIFT) {
+                Some(KeyAction::DiffSearchPrev)
+            } else {
+                Some(KeyAction::DiffSearchNext)
+            }
+        }
+        KeyCode::Backspace => Some(KeyAction::DiffSearchBackspace),
+        KeyCode::Char(c) => Some(KeyAction::DiffSearchInput(c)),
+        _ => None,
     }
 }
 
@@ -200,6 +257,12 @@ fn review_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
         return Some(KeyAction::ScrollDiff(-10));
     }
     if ctrl(&key, 'f') {
+        // Ctrl+F opens diff search when the diff is focused; elsewhere it
+        // keeps its prior page-down meaning so users in the sidebar/commits
+        // don't lose a familiar shortcut.
+        if matches!(app.focused, FocusedPane::Diff) {
+            return Some(KeyAction::DiffSearchOpen);
+        }
         return Some(KeyAction::ScrollDiff(20));
     }
     if ctrl(&key, 'b') {
@@ -304,6 +367,9 @@ fn fullscreen_key(key: KeyEvent) -> Option<KeyAction> {
     }
     if ctrl(&key, 'u') {
         return Some(KeyAction::ScrollDiff(-10));
+    }
+    if ctrl(&key, 'f') {
+        return Some(KeyAction::DiffSearchOpen);
     }
     if ctrl(&key, 'j') {
         return Some(KeyAction::ScrollDiff(20));

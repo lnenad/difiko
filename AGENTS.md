@@ -229,3 +229,7 @@ The pattern is everywhere; understand it once:
 |                                   | migration on load and a test                        |
 | Tweak setup-screen UX             | `src/ui/setup.rs` + repo-completion methods on App  |
 | Tweak header / breathing room     | `ui/review.rs` + `ui/fullscreen.rs` outer Layout    |
+
+# Important
+
+With every update, update this file, readme, and any visible help tips that the user might see.
