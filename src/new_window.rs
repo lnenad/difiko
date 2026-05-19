@@ -7,10 +7,20 @@ use std::process::Command;
 
 pub fn relaunch_in_new_window() -> Result<()> {
     let exe = env::current_exe().context("locating current executable")?;
-    let args: Vec<String> = env::args()
+    let mut args: Vec<String> = env::args()
         .skip(1)
         .filter(|a| a != "--new-window" && a != "-w")
         .collect();
+    // The new terminal window may launch a fresh login shell (Terminal.app
+    // on macOS does this — opens in $HOME) which loses the cwd the user
+    // invoked us from. Inject --repo <cwd> if the user didn't supply one.
+    let has_repo = args.iter().any(|a| a == "--repo" || a.starts_with("--repo="));
+    if !has_repo {
+        if let Ok(cwd) = env::current_dir() {
+            args.push("--repo".to_string());
+            args.push(cwd.to_string_lossy().into_owned());
+        }
+    }
     spawn_detached(&exe, &args)
 }
 

@@ -305,11 +305,12 @@ pub fn build_unified_lines(
 
 fn search_match_style(is_current: bool) -> Style {
     if is_current {
-        // High-contrast hot magenta for the active match — pops against the
-        // green/red/default diff text plus the other (yellow) matches.
+        // Named colors instead of Rgb — macOS Terminal.app doesn't render
+        // 24-bit truecolor and silently drops the bg, leaving the active
+        // match looking like plain white text on default background.
         Style::default()
-            .bg(Color::Rgb(220, 0, 160))
-            .fg(Color::Rgb(255, 255, 255))
+            .bg(Color::Magenta)
+            .fg(Color::White)
             .add_modifier(Modifier::BOLD)
             .add_modifier(Modifier::UNDERLINED)
     } else {
