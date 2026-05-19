@@ -14,7 +14,9 @@ pub fn relaunch_in_new_window() -> Result<()> {
     // The new terminal window may launch a fresh login shell (Terminal.app
     // on macOS does this — opens in $HOME) which loses the cwd the user
     // invoked us from. Inject --repo <cwd> if the user didn't supply one.
-    let has_repo = args.iter().any(|a| a == "--repo" || a.starts_with("--repo="));
+    let has_repo = args
+        .iter()
+        .any(|a| a == "--repo" || a.starts_with("--repo="));
     if !has_repo {
         if let Ok(cwd) = env::current_dir() {
             args.push("--repo".to_string());

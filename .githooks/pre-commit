@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# Pre-commit: fmt + clippy gate. Mirrors the CI workflow so failures show up
+# locally instead of on the runner.
+set -e
+
+if ! command -v cargo >/dev/null 2>&1; then
+    echo "pre-commit: cargo not found in PATH; skipping fmt/clippy" >&2
+    exit 0
+fi
+
+echo "pre-commit: cargo fmt --all -- --check"
+cargo fmt --all -- --check
+
+echo "pre-commit: cargo clippy --all-targets -- -D warnings"
+cargo clippy --all-targets -- -D warnings
