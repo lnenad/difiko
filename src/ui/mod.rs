@@ -8,8 +8,10 @@ pub mod review;
 pub mod setup;
 pub mod sidebar;
 pub mod status_bar;
+pub mod syntax;
 pub mod theme;
 pub mod toast;
+pub mod word_diff;
 
 use crate::app::{App, Modal, Screen};
 use ratatui::Frame;

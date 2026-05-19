@@ -1,7 +1,9 @@
 use crate::cli::Cli;
+use crate::config::Config;
 use crate::model::{Commit, FileChange};
 use crate::persistence::Store;
 use crate::tree::{DirNode, TreeRow};
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -495,6 +497,13 @@ pub struct App {
     pub initial_file: Option<String>,
     pub initial_fullscreen: bool,
 
+    pub config: Config,
+
+    /// Per-file cache of syntect highlight output. Lazily populated by the
+    /// renderer; cleared when a new diff loads. Interior-mutable so renderers
+    /// holding `&App` can populate it.
+    pub syntax_cache: RefCell<crate::ui::syntax::FileHighlights>,
+
     pub should_quit: bool,
 }
 
@@ -579,6 +588,18 @@ impl App {
 
             initial_file: cli.file.clone(),
             initial_fullscreen: cli.fullscreen,
+
+            config: {
+                let mut c = Config::load();
+                if cli.no_word_diff {
+                    c.word_diff = false;
+                }
+                if cli.no_syntax {
+                    c.syntax_highlight = false;
+                }
+                c
+            },
+            syntax_cache: RefCell::new(HashMap::new()),
 
             should_quit: false,
         };
@@ -775,6 +796,17 @@ impl App {
             self.reviewed =
                 store.load_reviewed(&repo.display().to_string(), base, compare, &self.files);
         }
+    }
+
+    pub fn toggle_word_diff(&mut self) {
+        self.config.word_diff = !self.config.word_diff;
+        let _ = self.config.save();
+    }
+
+    pub fn toggle_syntax_highlight(&mut self) {
+        self.config.syntax_highlight = !self.config.syntax_highlight;
+        self.syntax_cache.borrow_mut().clear();
+        let _ = self.config.save();
     }
 
     pub fn total_additions(&self) -> u32 {

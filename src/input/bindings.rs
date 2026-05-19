@@ -18,6 +18,8 @@ pub enum KeyAction {
     ToggleDiffMode,
     ToggleReviewed,
     ToggleBlame,
+    ToggleWordDiff,
+    ToggleSyntaxHighlight,
     ClearReviewed,
 
     EnterFullscreen,
@@ -305,6 +307,8 @@ fn review_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
         (_, KeyCode::Char('c'), m) if m.is_empty() => Some(KeyAction::ToggleCommitsPanel),
         (_, KeyCode::Char('u'), m) if m.is_empty() => Some(KeyAction::ToggleDiffMode),
         (_, KeyCode::Char('b'), m) if m.is_empty() => Some(KeyAction::ToggleBlame),
+        (_, KeyCode::Char('W'), _) => Some(KeyAction::ToggleWordDiff),
+        (_, KeyCode::Char('S'), _) => Some(KeyAction::ToggleSyntaxHighlight),
         (_, KeyCode::Char('F'), _) => Some(KeyAction::EnterFullscreen),
         (_, KeyCode::Char('/'), m) if m.is_empty() => Some(KeyAction::OpenFileFilter),
         (_, KeyCode::Char('J'), _) => Some(KeyAction::NextFile),
@@ -402,6 +406,8 @@ fn fullscreen_key(key: KeyEvent) -> Option<KeyAction> {
         KeyCode::Char('m') => Some(KeyAction::ToggleReviewed),
         KeyCode::Char('u') => Some(KeyAction::ToggleDiffMode),
         KeyCode::Char('b') => Some(KeyAction::ToggleBlame),
+        KeyCode::Char('W') => Some(KeyAction::ToggleWordDiff),
+        KeyCode::Char('S') => Some(KeyAction::ToggleSyntaxHighlight),
         _ => None,
     }
 }
@@ -437,6 +443,8 @@ mod tests {
             fullscreen: false,
             no_remote_branches: false,
             new_window: false,
+            no_word_diff: false,
+            no_syntax: false,
         };
         App::new(&cli)
     }

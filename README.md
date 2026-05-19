@@ -65,6 +65,8 @@ CLI flags:
 | `--fullscreen`          | Open `--file` in fullscreen mode immediately.               |
 | `--no-remote-branches`  | Hide remote-tracking branches from the picker.              |
 | `--new-window` / `-w`   | Re-launch in a new terminal window and exit this process.   |
+| `--no-word-diff`        | Disable per-line word-level diff highlighting.              |
+| `--no-syntax`           | Disable syntax highlighting.                                |
 
 If `--repo`, `--base`, and `--compare` are all valid, the Setup screen is
 skipped and the diff loads immediately.
@@ -209,6 +211,8 @@ Press **`?`** at any time for the in-app help overlay.
 | m   | Mark current file reviewed                   |
 | b   | Toggle git blame gutter                      |
 | u   | Toggle Unified / Split diff                  |
+| W   | Toggle word-level diff highlighting          |
+| S   | Toggle syntax highlighting                   |
 | F   | Open current file in fullscreen              |
 | c   | Toggle commits panel                         |
 | r   | Reload diff                                  |
@@ -237,7 +241,23 @@ Press **`?`** at any time for the in-app help overlay.
 | m              | Toggle reviewed                     |
 | u              | Toggle Unified / Split              |
 | b              | Toggle git blame gutter             |
+| W              | Toggle word diff                    |
+| S              | Toggle syntax highlighting          |
 | q / Esc        | Exit fullscreen                     |
+
+## Config
+
+User preferences (word diff on/off, syntax on/off) persist to:
+
+```
+~/Library/Application Support/dev.local.difiko/config.json   # macOS
+~/.config/difiko/config.json                                 # Linux
+%APPDATA%\local\difiko\config\config.json                    # Windows
+```
+
+Toggle at runtime with **W** (word diff) and **S** (syntax). Both default
+on. CLI flags `--no-word-diff` and `--no-syntax` override the file for a
+single session without persisting.
 
 ## Persistence
 
@@ -262,6 +282,12 @@ notice rather than silently losing data.
 - **Single binary**: Rust + `ratatui` + `crossterm` + `tokio` + `clap`. No
   network, no server, no IPC. Talks directly to local `git` via
   `tokio::process::Command`.
+- **Syntax highlighting** via `syntect` (default themes bundled). Each file's
+  diff content is highlighted in a single pass so multi-line constructs
+  keep context. Output is cached per-file until the diff reloads.
+- **Word diff** via `similar`. Adjacent `-`/`+` lines are paired and
+  word-LCS'd; the changed words render bold and the unchanged words dim,
+  so the eye lands on the actual edit.
 - **Async**: git operations don't block the UI; results flow back through an
   `mpsc` channel and are matched against monotonic request IDs so stale results
   are discarded after navigation.

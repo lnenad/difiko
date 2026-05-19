@@ -1,6 +1,6 @@
 [package]
 name = "difiko"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "Keyboard-driven TUI for reviewing local git PRs"
 repository = "https://github.com/lnenad/difiko"
@@ -30,6 +30,8 @@ directories = "5"
 nucleo-matcher = "0.3"
 unicode-width = "0.2"
 sha2 = "0.10"
+similar = "2"
+syntect = { version = "5", default-features = false, features = ["default-fancy"] }
 
 [profile.release]
 lto = "thin"

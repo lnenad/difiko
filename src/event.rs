@@ -277,6 +277,7 @@ fn handle_git_result(app: &mut App, result: GitResult, tx: &UnboundedSender<AppE
                 Ok(files) => {
                     app.files = files;
                     app.all_files_backup = Some(app.files.clone());
+                    app.syntax_cache.borrow_mut().clear();
                     app.rebuild_tree();
                     app.sidebar_selected = 0;
                     app.fullscreen_idx = 0;
@@ -458,6 +459,22 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
             if app.blame_enabled {
                 ensure_blame_for_visible(app, tx);
             }
+        }
+        ToggleWordDiff => {
+            app.toggle_word_diff();
+            let on = app.config.word_diff;
+            app.toast(
+                format!("Word diff: {}", if on { "on" } else { "off" }),
+                ToastKind::Info,
+            );
+        }
+        ToggleSyntaxHighlight => {
+            app.toggle_syntax_highlight();
+            let on = app.config.syntax_highlight;
+            app.toast(
+                format!("Syntax highlight: {}", if on { "on" } else { "off" }),
+                ToastKind::Info,
+            );
         }
         EnterFullscreen => {
             if let Some(idx) = app.current_file_index() {

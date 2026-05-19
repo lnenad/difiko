@@ -8,6 +8,20 @@ pub const ACCENT_DIM: Color = Color::Blue;
 pub const ADD: Color = Color::Green;
 pub const DEL: Color = Color::Red;
 pub const HUNK: Color = Color::Magenta;
+/// Subtle dark tints for add/del rows when syntax highlighting is on.
+/// 24-bit truecolor — macOS Terminal.app users won't see the bg (it
+/// doesn't support truecolor) but the green/red prefix and line numbers
+/// still distinguish rows. Indexed colors weren't dark enough on
+/// Windows Terminal palettes; tuning by exact Rgb is the only way to
+/// stay subtle across terminals that do render truecolor.
+pub const ADD_BG: Color = Color::Rgb(15, 40, 15);
+pub const DEL_BG: Color = Color::Rgb(55, 15, 15);
+/// Stronger tints painted over the changed bytes within an add/del line
+/// (word-diff overlay). Same two-tier scheme Claude Code, delta, and
+/// most modern diff viewers use: subtle for the whole line, stronger
+/// for the precise edit.
+pub const ADD_BG_STRONG: Color = Color::Rgb(30, 95, 30);
+pub const DEL_BG_STRONG: Color = Color::Rgb(140, 30, 30);
 pub const STATUS_ADD: Color = Color::Green;
 pub const STATUS_MOD: Color = Color::Yellow;
 pub const STATUS_DEL: Color = Color::Red;

@@ -34,4 +34,12 @@ pub struct Cli {
     /// Re-launch difiko in a new terminal window and exit the current process.
     #[arg(long, short = 'w', default_value_t = false)]
     pub new_window: bool,
+
+    /// Disable per-line word-level diff highlighting (overrides config).
+    #[arg(long, default_value_t = false)]
+    pub no_word_diff: bool,
+
+    /// Disable syntax highlighting (overrides config).
+    #[arg(long, default_value_t = false)]
+    pub no_syntax: bool,
 }

@@ -77,8 +77,25 @@ fn render_unified_inline(
     scroll_h: u16,
     area: ratatui::layout::Rect,
 ) {
-    let blame = diff_view::blame_for(app, file);
-    let lines = diff_view::build_unified_lines(file, blame, app.diff_search.as_ref());
+    diff_view::ensure_syntax_cache(app, file);
+    let cache = app.syntax_cache.borrow();
+    let syntax_data = if app.config.syntax_highlight {
+        cache.get(&file.path).map(|v| v.as_slice())
+    } else {
+        None
+    };
+    let word_pairings = if app.config.word_diff {
+        Some(diff_view::compute_word_pairings(&file.diff_lines))
+    } else {
+        None
+    };
+    let ctx = diff_view::DiffRenderCtx {
+        blame: diff_view::blame_for(app, file),
+        search: app.diff_search.as_ref(),
+        syntax: syntax_data,
+        word_pairings: word_pairings.as_ref(),
+    };
+    let lines = diff_view::build_unified_lines(file, &ctx);
     let p = Paragraph::new(lines).scroll((scroll, scroll_h));
     f.render_widget(p, area);
 }
@@ -96,8 +113,25 @@ fn render_split_inline(
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(area);
 
-    let blame = diff_view::blame_for(app, file);
-    let (left, right) = diff_view::build_split_lines(file, blame, app.diff_search.as_ref());
+    diff_view::ensure_syntax_cache(app, file);
+    let cache = app.syntax_cache.borrow();
+    let syntax_data = if app.config.syntax_highlight {
+        cache.get(&file.path).map(|v| v.as_slice())
+    } else {
+        None
+    };
+    let word_pairings = if app.config.word_diff {
+        Some(diff_view::compute_word_pairings(&file.diff_lines))
+    } else {
+        None
+    };
+    let ctx = diff_view::DiffRenderCtx {
+        blame: diff_view::blame_for(app, file),
+        search: app.diff_search.as_ref(),
+        syntax: syntax_data,
+        word_pairings: word_pairings.as_ref(),
+    };
+    let (left, right) = diff_view::build_split_lines(file, &ctx);
     let lp = Paragraph::new(left).scroll((scroll, scroll_h));
     let rp = Paragraph::new(right).scroll((scroll, scroll_h));
     f.render_widget(lp, cols[0]);
