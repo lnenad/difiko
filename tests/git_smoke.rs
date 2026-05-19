@@ -3,7 +3,11 @@ use std::path::PathBuf;
 
 #[tokio::test]
 async fn loads_branches_diff_commits_from_real_repo() {
-    let repo = PathBuf::from(std::env::var("HOME").unwrap()).join("projects/infra");
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        eprintln!("skipping: no HOME/USERPROFILE in env");
+        return;
+    };
+    let repo = PathBuf::from(home).join("projects/infra");
     if !repo.join(".git").exists() {
         eprintln!("skipping: {} is not a git repo", repo.display());
         return;
