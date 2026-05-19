@@ -18,10 +18,18 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         .unwrap_or_else(|| "<none>".to_string());
 
     let base = app.base_branch.clone().unwrap_or_else(|| "—".to_string());
-    let compare = app.compare_branch.clone().unwrap_or_else(|| "—".to_string());
+    let compare = app
+        .compare_branch
+        .clone()
+        .unwrap_or_else(|| "—".to_string());
 
     let mut spans = vec![
-        Span::styled(" difiko ", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            " difiko ",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled("│ ", Style::default().fg(theme::DIM)),
         Span::styled("repo: ", theme::label_style()),
         Span::raw(repo),
@@ -48,7 +56,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         ));
         spans.push(Span::raw("  "));
         spans.push(Span::styled("reviewed: ", theme::label_style()));
-        let reviewed_count = app.files.iter().filter(|f| app.reviewed.contains(&f.path)).count();
+        let reviewed_count = app
+            .files
+            .iter()
+            .filter(|f| app.reviewed.contains(&f.path))
+            .count();
         spans.push(Span::raw(format!("{}/{}", reviewed_count, app.files.len())));
         if let Some(hash) = &app.selected_commit {
             spans.push(Span::styled(" │ ", Style::default().fg(theme::DIM)));
@@ -59,7 +71,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         }
     }
 
-    if app.pending.diff || app.pending.commits || app.pending.branches || app.pending.commit_diff.is_some() {
+    if app.pending.diff
+        || app.pending.commits
+        || app.pending.branches
+        || app.pending.commit_diff.is_some()
+    {
         let frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         let frame = frames[(app.spinner_tick as usize) % frames.len()];
         spans.push(Span::styled(

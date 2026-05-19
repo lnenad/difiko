@@ -55,14 +55,12 @@ pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
         .collect();
     // The "▶" marker keeps the selected row visible even on terminals where
     // a subtle background tint is imperceptible.
-    let list = List::new(items)
-        .highlight_symbol("▶ ")
-        .highlight_style(
-            Style::default()
-                .fg(theme::ACCENT)
-                .bg(ratatui::style::Color::Rgb(40, 50, 70))
-                .add_modifier(Modifier::BOLD),
-        );
+    let list = List::new(items).highlight_symbol("▶ ").highlight_style(
+        Style::default()
+            .fg(theme::ACCENT)
+            .bg(ratatui::style::Color::Rgb(40, 50, 70))
+            .add_modifier(Modifier::BOLD),
+    );
     let mut state = ListState::default();
     if !picker.filtered.is_empty() {
         state.select(Some(picker.selected));

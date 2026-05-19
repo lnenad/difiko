@@ -77,7 +77,9 @@ fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
         .max()
         .unwrap_or(0)
         + 4;
-    let width = widest.max(20).min(frame_area.width.saturating_sub(repo_area.x + 4));
+    let width = widest
+        .max(20)
+        .min(frame_area.width.saturating_sub(repo_area.x + 4));
     let drop_rect = Rect {
         x: repo_area.x + 2,
         y: repo_area.y + repo_area.height,
@@ -89,7 +91,11 @@ fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
     let title = format!(
         " {} match{} — Shift-→ accept, ↑/↓ cycle ",
         app.repo_completions.len(),
-        if app.repo_completions.len() == 1 { "" } else { "es" }
+        if app.repo_completions.len() == 1 {
+            ""
+        } else {
+            "es"
+        }
     );
     let block = Block::default()
         .borders(Borders::ALL)
@@ -137,11 +143,32 @@ fn render_branch_pickers(f: &mut Frame, app: &App, area: Rect) {
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(area);
-    render_branch_list(f, app, cols[0], "Base branch", &app.base_branch, matches!(app.setup_field, SetupField::Base));
-    render_branch_list(f, app, cols[1], "Compare branch", &app.compare_branch, matches!(app.setup_field, SetupField::Compare));
+    render_branch_list(
+        f,
+        app,
+        cols[0],
+        "Base branch",
+        &app.base_branch,
+        matches!(app.setup_field, SetupField::Base),
+    );
+    render_branch_list(
+        f,
+        app,
+        cols[1],
+        "Compare branch",
+        &app.compare_branch,
+        matches!(app.setup_field, SetupField::Compare),
+    );
 }
 
-fn render_branch_list(f: &mut Frame, app: &App, area: Rect, label: &str, selected: &Option<String>, focused: bool) {
+fn render_branch_list(
+    f: &mut Frame,
+    app: &App,
+    area: Rect,
+    label: &str,
+    selected: &Option<String>,
+    focused: bool,
+) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title(format!(" {label} "))
@@ -168,31 +195,47 @@ fn render_branch_list(f: &mut Frame, app: &App, area: Rect, label: &str, selecte
             let is_selected = selected.as_deref() == Some(b.as_str());
             let marker = if is_selected { "▶ " } else { "  " };
             let style = if is_selected {
-                Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(theme::ACCENT)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
-            Line::from(vec![Span::raw(marker.to_string()), Span::styled(b.clone(), style)])
+            Line::from(vec![
+                Span::raw(marker.to_string()),
+                Span::styled(b.clone(), style),
+            ])
         })
         .collect();
     let p = Paragraph::new(lines);
     f.render_widget(p, inner);
 
     if focused {
-        let hint = Paragraph::new("Enter / Space / j / k to pick")
-            .style(Style::default().fg(theme::DIM));
-        let h = Rect { x: inner.x, y: inner.y + inner.height.saturating_sub(1), width: inner.width, height: 1 };
+        let hint =
+            Paragraph::new("Enter / Space / j / k to pick").style(Style::default().fg(theme::DIM));
+        let h = Rect {
+            x: inner.x,
+            y: inner.y + inner.height.saturating_sub(1),
+            width: inner.width,
+            height: 1,
+        };
         f.render_widget(hint, h);
     }
 }
 
 fn render_options(f: &mut Frame, app: &App, area: Rect) {
-    let on = if app.include_remote_branches { "ON" } else { "OFF" };
+    let on = if app.include_remote_branches {
+        "ON"
+    } else {
+        "OFF"
+    };
     let focused_remote = matches!(app.setup_field, SetupField::Remote);
     let focused_submit = matches!(app.setup_field, SetupField::Submit);
     let label_style = |focused| {
         if focused {
-            Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(theme::DIM)
         }

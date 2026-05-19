@@ -19,11 +19,7 @@ async fn load_working_tree_diff(repo: &Path, base: &str) -> Result<Vec<FileChang
     if entries.is_empty() {
         return Ok(Vec::new());
     }
-    let full_diff = command::run(
-        repo,
-        &["-c", "core.quotePath=false", "diff", base, "--"],
-    )
-    .await?;
+    let full_diff = command::run(repo, &["-c", "core.quotePath=false", "diff", base, "--"]).await?;
     let sections = parse::split_diff_into_sections(&full_diff);
     let mut files: Vec<FileChange> = entries
         .into_iter()
@@ -61,11 +57,8 @@ async fn load_diff_for_range(repo: &Path, range: &str) -> Result<Vec<FileChange>
     // Disable C-style path quoting so the diff body uses raw UTF-8 paths;
     // section content is matched to entries positionally, so we don't depend
     // on the "diff --git" header path being parseable.
-    let full_diff = command::run(
-        repo,
-        &["-c", "core.quotePath=false", "diff", range, "--"],
-    )
-    .await?;
+    let full_diff =
+        command::run(repo, &["-c", "core.quotePath=false", "diff", range, "--"]).await?;
     let sections = parse::split_diff_into_sections(&full_diff);
 
     let mut files: Vec<FileChange> = entries

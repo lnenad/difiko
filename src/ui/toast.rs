@@ -15,7 +15,12 @@ pub fn render(f: &mut Frame, app: &App) {
             break;
         }
         let x = area.x + area.width.saturating_sub(width + 1);
-        let rect = Rect { x, y: y.saturating_sub(height), width, height };
+        let rect = Rect {
+            x,
+            y: y.saturating_sub(height),
+            width,
+            height,
+        };
         f.render_widget(Clear, rect);
         let color = match toast.kind {
             ToastKind::Info => theme::ACCENT,

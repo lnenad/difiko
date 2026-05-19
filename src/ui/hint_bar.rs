@@ -10,7 +10,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let hints: Vec<(&str, &str)> = match app.screen {
         Screen::Setup => match app.setup_field {
             SetupField::Repo => {
-                let dropdown_visible = !app.repo_dropdown_hidden && !app.repo_completions.is_empty();
+                let dropdown_visible =
+                    !app.repo_dropdown_hidden && !app.repo_completions.is_empty();
                 if dropdown_visible {
                     vec![
                         ("↑/↓", "cycle dirs"),

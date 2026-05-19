@@ -95,7 +95,10 @@ fn quote_posix(exe: &Path, args: &[String]) -> String {
 
 #[cfg(unix)]
 fn shell_quote(s: &str) -> String {
-    if !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || "@%+=:,./-_".contains(c)) {
+    if !s.is_empty()
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "@%+=:,./-_".contains(c))
+    {
         s.to_string()
     } else {
         format!("'{}'", s.replace('\'', "'\\''"))

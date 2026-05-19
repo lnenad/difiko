@@ -146,7 +146,10 @@ fn ctrl(key: &KeyEvent, c: char) -> bool {
 }
 
 fn modal_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
-    let is_overlay = matches!(app.modal, Some(Modal::HelpOverlay) | Some(Modal::Error { .. }));
+    let is_overlay = matches!(
+        app.modal,
+        Some(Modal::HelpOverlay) | Some(Modal::Error { .. })
+    );
     match key.code {
         KeyCode::Esc => Some(KeyAction::ModalClose),
         KeyCode::Char('q') if is_overlay => Some(KeyAction::ModalClose),
@@ -308,9 +311,8 @@ fn review_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
         (_, KeyCode::Char('K'), _) => Some(KeyAction::PrevFile),
 
         // Sidebar
-        (FocusedPane::Sidebar, KeyCode::Char('j'), _) | (FocusedPane::Sidebar, KeyCode::Down, _) => {
-            Some(KeyAction::SidebarMove(1))
-        }
+        (FocusedPane::Sidebar, KeyCode::Char('j'), _)
+        | (FocusedPane::Sidebar, KeyCode::Down, _) => Some(KeyAction::SidebarMove(1)),
         (FocusedPane::Sidebar, KeyCode::Char('k'), _) | (FocusedPane::Sidebar, KeyCode::Up, _) => {
             Some(KeyAction::SidebarMove(-1))
         }
@@ -356,7 +358,9 @@ fn fullscreen_key(key: KeyEvent) -> Option<KeyAction> {
         return Some(KeyAction::Quit);
     }
     // Handle q/Esc before falling through to global_key (which would treat q as Quit).
-    if matches!(key.code, KeyCode::Esc) || matches!(key.code, KeyCode::Char('q') if key.modifiers.is_empty()) {
+    if matches!(key.code, KeyCode::Esc)
+        || matches!(key.code, KeyCode::Char('q') if key.modifiers.is_empty())
+    {
         return Some(KeyAction::ExitFullscreen);
     }
     if let Some(common) = global_key(key) {
@@ -515,4 +519,3 @@ mod tests {
         assert!(matches!(action, KeyAction::ModalClose));
     }
 }
-

@@ -15,11 +15,7 @@ pub async fn run(repo: &Path, args: &[&str]) -> Result<String> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow!(
-            "git {} failed: {}",
-            args.join(" "),
-            stderr.trim()
-        ));
+        return Err(anyhow!("git {} failed: {}", args.join(" "), stderr.trim()));
     }
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
@@ -37,11 +33,7 @@ pub async fn run_bytes(repo: &Path, args: &[&str]) -> Result<Vec<u8>> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow!(
-            "git {} failed: {}",
-            args.join(" "),
-            stderr.trim()
-        ));
+        return Err(anyhow!("git {} failed: {}", args.join(" "), stderr.trim()));
     }
     Ok(output.stdout)
 }

@@ -21,7 +21,11 @@ pub fn blame_gutter_span(blame: Option<&Blame>, line_no: u32) -> Option<Span<'st
         Some(Span::styled(format!("{} {} │ ", hash, author), style))
     } else {
         Some(Span::styled(
-            format!("{:width$} │ ", "", width = BLAME_HASH_W + 1 + BLAME_AUTHOR_W),
+            format!(
+                "{:width$} │ ",
+                "",
+                width = BLAME_HASH_W + 1 + BLAME_AUTHOR_W
+            ),
             style,
         ))
     }
@@ -62,7 +66,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             .border_style(theme::focused_border(focused));
         let inner = block.inner(area);
         f.render_widget(block, area);
-        let p = Paragraph::new("Select a file in the sidebar.").style(Style::default().fg(theme::DIM));
+        let p =
+            Paragraph::new("Select a file in the sidebar.").style(Style::default().fg(theme::DIM));
         f.render_widget(p, inner);
         return;
     };
@@ -70,7 +75,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(theme::focused_border(focused))
-        .title(Line::from(file_header_spans(file, app.reviewed.contains(&file.path))));
+        .title(Line::from(file_header_spans(
+            file,
+            app.reviewed.contains(&file.path),
+        )));
 
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -112,18 +120,24 @@ pub fn render_search_bar(f: &mut Frame, area: Rect, search: &DiffSearch) {
     } else {
         format!(" [{}/{}]", search.current + 1, total)
     };
-    let mut spans: Vec<Span<'static>> = Vec::new();
-    spans.push(Span::styled(
-        "/".to_string(),
-        Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD),
-    ));
-    spans.push(Span::raw(search.query.buffer.clone()));
-    spans.push(Span::styled("▏", Style::default().fg(theme::ACCENT)));
-    spans.push(Span::styled(counter, Style::default().fg(theme::DIM)));
+    let mut spans: Vec<Span<'static>> = vec![
+        Span::styled(
+            "/".to_string(),
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(search.query.buffer.clone()),
+        Span::styled("▏", Style::default().fg(theme::ACCENT)),
+        Span::styled(counter, Style::default().fg(theme::DIM)),
+    ];
     // Case-sensitivity indicator: bright when active, dim when off.
     let case_label = " Aa";
     let case_style = if search.case_sensitive {
-        Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD).add_modifier(Modifier::UNDERLINED)
+        Style::default()
+            .fg(theme::ACCENT)
+            .add_modifier(Modifier::BOLD)
+            .add_modifier(Modifier::UNDERLINED)
     } else {
         Style::default().fg(theme::DIM)
     };
@@ -142,13 +156,21 @@ pub fn file_header_spans(file: &FileChange, reviewed: bool) -> Vec<Span<'static>
         Span::raw(" "),
         Span::styled(
             format!("[{}] ", file.status.label()),
-            Style::default().fg(status_color).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(status_color)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::raw(file.display_name()),
         Span::raw("  "),
-        Span::styled(format!("+{}", file.additions), Style::default().fg(theme::ADD)),
+        Span::styled(
+            format!("+{}", file.additions),
+            Style::default().fg(theme::ADD),
+        ),
         Span::raw(" "),
-        Span::styled(format!("-{}", file.deletions), Style::default().fg(theme::DEL)),
+        Span::styled(
+            format!("-{}", file.deletions),
+            Style::default().fg(theme::DEL),
+        ),
     ];
     if reviewed {
         spans.push(Span::styled(
@@ -207,7 +229,12 @@ pub fn build_unified_lines(
     };
     for (i, dl) in file.diff_lines.iter().enumerate() {
         match dl {
-            DiffLine::Hunk { header, old_start, new_start, .. } => {
+            DiffLine::Hunk {
+                header,
+                old_start,
+                new_start,
+                ..
+            } => {
                 old_no = *old_start;
                 new_no = *new_start;
                 let mut spans: Vec<Span<'static>> = Vec::new();
@@ -217,7 +244,9 @@ pub fn build_unified_lines(
                 push_content_spans(
                     &mut spans,
                     header,
-                    Style::default().fg(theme::HUNK).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(theme::HUNK)
+                        .add_modifier(Modifier::BOLD),
                     i,
                     search,
                 );
@@ -257,10 +286,16 @@ pub fn build_unified_lines(
                 lines.push(Line::from(spans));
             }
             DiffLine::NoNewline(text) => {
-                lines.push(Line::from(Span::styled(text.clone(), Style::default().fg(theme::DIM))));
+                lines.push(Line::from(Span::styled(
+                    text.clone(),
+                    Style::default().fg(theme::DIM),
+                )));
             }
             DiffLine::Binary(text) => {
-                lines.push(Line::from(Span::styled(text.clone(), Style::default().fg(theme::DIM))));
+                lines.push(Line::from(Span::styled(
+                    text.clone(),
+                    Style::default().fg(theme::DIM),
+                )));
             }
             _ => {}
         }
@@ -357,21 +392,17 @@ fn render_split(
     let max_scroll = total.saturating_sub(area.height);
     let effective = scroll.min(max_scroll);
 
-    let left_p = Paragraph::new(left)
-        .scroll((effective, scroll_h))
-        .block(
-            Block::default()
-                .borders(Borders::RIGHT)
-                .border_style(Style::default().fg(theme::DIM))
-                .title(Span::styled(" old ", Style::default().fg(theme::DEL))),
-        );
-    let right_p = Paragraph::new(right)
-        .scroll((effective, scroll_h))
-        .block(
-            Block::default()
-                .borders(Borders::NONE)
-                .title(Span::styled(" new ", Style::default().fg(theme::ADD))),
-        );
+    let left_p = Paragraph::new(left).scroll((effective, scroll_h)).block(
+        Block::default()
+            .borders(Borders::RIGHT)
+            .border_style(Style::default().fg(theme::DIM))
+            .title(Span::styled(" old ", Style::default().fg(theme::DEL))),
+    );
+    let right_p = Paragraph::new(right).scroll((effective, scroll_h)).block(
+        Block::default()
+            .borders(Borders::NONE)
+            .title(Span::styled(" new ", Style::default().fg(theme::ADD))),
+    );
     f.render_widget(left_p, chunks[0]);
     f.render_widget(right_p, chunks[1]);
 }
@@ -400,7 +431,9 @@ pub fn build_split_lines(
 
     for (i, dl) in file.diff_lines.iter().enumerate() {
         match dl {
-            DiffLine::Hunk { header, new_start, .. } => {
+            DiffLine::Hunk {
+                header, new_start, ..
+            } => {
                 flush_split_pending(
                     &mut pending_del,
                     &mut pending_add,
@@ -411,7 +444,9 @@ pub fn build_split_lines(
                     search,
                 );
                 new_no = *new_start;
-                let hunk_style = Style::default().fg(theme::HUNK).add_modifier(Modifier::BOLD);
+                let hunk_style = Style::default()
+                    .fg(theme::HUNK)
+                    .add_modifier(Modifier::BOLD);
                 let mut lspans: Vec<Span<'static>> = Vec::new();
                 push_content_spans(&mut lspans, header, hunk_style, i, search);
                 let mut rspans: Vec<Span<'static>> = Vec::new();

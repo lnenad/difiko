@@ -4,7 +4,9 @@ version = "0.1.1"
 edition = "2021"
 description = "Keyboard-driven TUI for reviewing local git PRs"
 repository = "https://github.com/lnenad/difiko"
+homepage = "https://github.com/lnenad/difiko"
 license = "MIT OR Apache-2.0"
+readme = "README.md"
 
 [lib]
 name = "difiko"

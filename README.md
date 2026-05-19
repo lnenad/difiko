@@ -4,22 +4,50 @@ A keyboard-driven terminal UI for reviewing local git PRs. Pick two refs, walk
 file diffs in a sidebar, mark files reviewed, filter by commit, and view blame —
 all without leaving your terminal. Single static binary, no server.
 
-This is a Rust replacement for the React + Express web app in the parent
-directory. The web UI is still available; this crate is self-contained.
+<!-- TODO: record a demo with `vhs demo.tape` and commit demo.gif, then drop it here:
+![difiko demo](demo.gif)
+-->
+
+## Install
+
+### macOS / Linux
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/lnenad/difiko/releases/latest/download/difiko-installer.sh | sh
+```
+
+### Homebrew
+
+```sh
+brew install lnenad/tap/difiko
+```
+
+### Windows (PowerShell)
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/lnenad/difiko/releases/latest/download/difiko-installer.ps1 | iex"
+```
+
+### From source
+
+```sh
+cargo install --git https://github.com/lnenad/difiko
+```
+
+Pre-built archives for `x86_64-{linux,windows,macos}` and `aarch64-{linux,macos}` are attached to every [GitHub Release](https://github.com/lnenad/difiko/releases).
 
 ## Quick start
 
 ```sh
 # from inside any git repo
-cargo run --release
+difiko
 
 # or skip the setup screen entirely with CLI args
-cargo run --release -- --repo /path/to/repo --base main --compare HEAD
+difiko --repo /path/to/repo --base main --compare HEAD
 
 # or jump directly into fullscreen review of one file
-cargo run --release -- \
-  --repo /path/to/repo --base main --compare HEAD \
-  --file src/foo.rs --fullscreen
+difiko --repo /path/to/repo --base main --compare HEAD \
+       --file src/foo.rs --fullscreen
 ```
 
 CLI flags:
@@ -243,4 +271,9 @@ See `AGENTS.md` for module-level architecture and conventions.
 
 ## License
 
-Same as parent project.
+Dual-licensed under either of:
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+
+at your option.

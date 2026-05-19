@@ -35,7 +35,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
                 ),
                 Span::styled(
                     format!("{} ", c.short_hash),
-                    Style::default().fg(theme::ACCENT_DIM).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(theme::ACCENT_DIM)
+                        .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw(c.subject.clone()),
                 Span::styled(

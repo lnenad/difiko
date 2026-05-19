@@ -30,8 +30,17 @@ impl DirNode {
 
 #[derive(Debug, Clone)]
 pub enum TreeRow {
-    Dir { path: String, label: String, depth: usize, collapsed: bool },
-    File { path: String, label: String, depth: usize },
+    Dir {
+        path: String,
+        label: String,
+        depth: usize,
+        collapsed: bool,
+    },
+    File {
+        path: String,
+        label: String,
+        depth: usize,
+    },
 }
 
 pub fn flatten(root: &DirNode, collapsed: &std::collections::HashSet<String>) -> Vec<TreeRow> {
@@ -40,7 +49,13 @@ pub fn flatten(root: &DirNode, collapsed: &std::collections::HashSet<String>) ->
     out
 }
 
-fn walk(node: &DirNode, prefix: &str, depth: usize, out: &mut Vec<TreeRow>, collapsed: &std::collections::HashSet<String>) {
+fn walk(
+    node: &DirNode,
+    prefix: &str,
+    depth: usize,
+    out: &mut Vec<TreeRow>,
+    collapsed: &std::collections::HashSet<String>,
+) {
     for (name, child) in &node.dirs {
         let dir_path = if prefix.is_empty() {
             name.clone()
@@ -83,7 +98,11 @@ mod tests {
         let root = DirNode::from_paths(paths);
         let rows = flatten(&root, &HashSet::new());
         // Expect: src dir, src/bar dir, baz.rs file, foo.rs file, README.md
-        assert!(rows.iter().any(|r| matches!(r, TreeRow::Dir { path, .. } if path == "src")));
-        assert!(rows.iter().any(|r| matches!(r, TreeRow::File { label, .. } if label == "README.md")));
+        assert!(rows
+            .iter()
+            .any(|r| matches!(r, TreeRow::Dir { path, .. } if path == "src")));
+        assert!(rows
+            .iter()
+            .any(|r| matches!(r, TreeRow::File { label, .. } if label == "README.md")));
     }
 }

@@ -76,10 +76,7 @@ fn install_panic_hook() {
     }));
 }
 
-async fn run_loop(
-    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    app: &mut App,
-) -> Result<()> {
+async fn run_loop(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> Result<()> {
     let (tx, mut rx) = mpsc::unbounded_channel::<AppEvent>();
     let mut input_stream = EventStream::new();
     let mut ticker = tokio::time::interval(Duration::from_millis(120));
@@ -312,7 +309,11 @@ fn handle_git_result(app: &mut App, result: GitResult, tx: &UnboundedSender<AppE
                 Err(e) => app.toast(format!("Failed to load commits: {e}"), ToastKind::Error),
             }
         }
-        GitResultKind::Blame { git_ref, file, result: res } => {
+        GitResultKind::Blame {
+            git_ref,
+            file,
+            result: res,
+        } => {
             let key = (git_ref, file);
             app.blame_pending.remove(&key);
             match res {
@@ -485,10 +486,7 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
         }
         ToggleReviewed => {
             let path = match app.screen {
-                Screen::Fullscreen => app
-                    .files
-                    .get(app.fullscreen_idx)
-                    .map(|f| f.path.clone()),
+                Screen::Fullscreen => app.files.get(app.fullscreen_idx).map(|f| f.path.clone()),
                 _ => app.current_file().map(|f| f.path.clone()),
             };
             if let Some(p) = path {
@@ -600,7 +598,9 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
         }
         CommitsMove(delta) => move_commits(app, delta),
         CommitsToggleSelect => {
-            let Some(c) = app.commits.get(app.commits_selected).cloned() else { return };
+            let Some(c) = app.commits.get(app.commits_selected).cloned() else {
+                return;
+            };
             if app.selected_commit.as_deref() == Some(c.hash.as_str()) {
                 app.selected_commit = None;
                 if let Some(backup) = app.all_files_backup.clone() {
@@ -617,12 +617,19 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
                 } else if let Some(repo) = app.repo_path.clone() {
                     app.req_ids.commit_diff += 1;
                     app.pending.commit_diff = Some(c.hash.clone());
-                    tasks::spawn_load_commit_diff(tx.clone(), app.req_ids.commit_diff, repo, c.hash);
+                    tasks::spawn_load_commit_diff(
+                        tx.clone(),
+                        app.req_ids.commit_diff,
+                        repo,
+                        c.hash,
+                    );
                 }
             }
         }
         CommitsToggleExpand => {
-            let Some(c) = app.commits.get(app.commits_selected) else { return };
+            let Some(c) = app.commits.get(app.commits_selected) else {
+                return;
+            };
             if app.expanded_commit.as_deref() == Some(c.hash.as_str()) {
                 app.expanded_commit = None;
             } else {
@@ -802,7 +809,9 @@ enum ModalInputOp {
 }
 
 fn modal_input(app: &mut App, op: ModalInputOp) {
-    let Some(modal) = app.modal.as_mut() else { return };
+    let Some(modal) = app.modal.as_mut() else {
+        return;
+    };
     let picker = match modal {
         Modal::BranchPicker { picker, .. }
         | Modal::FileFilter { picker }
@@ -817,7 +826,9 @@ fn modal_input(app: &mut App, op: ModalInputOp) {
 }
 
 fn modal_move(app: &mut App, delta: i32) {
-    let Some(modal) = app.modal.as_mut() else { return };
+    let Some(modal) = app.modal.as_mut() else {
+        return;
+    };
     let picker = match modal {
         Modal::BranchPicker { picker, .. }
         | Modal::FileFilter { picker }
@@ -878,10 +889,7 @@ fn run_command(app: &mut App, cmd: &str, tx: &UnboundedSender<AppEvent>) {
             let items = picker_items_for(app, BranchSlot::Compare);
             app.modal = Some(Modal::BranchPicker {
                 which: BranchSlot::Compare,
-                picker: crate::app::Picker::with_selected(
-                    items,
-                    app.compare_branch.as_deref(),
-                ),
+                picker: crate::app::Picker::with_selected(items, app.compare_branch.as_deref()),
             });
         }
         "reload" => {
@@ -948,7 +956,8 @@ fn handle_setup_submit(app: &mut App, tx: &UnboundedSender<AppEvent>) {
             app.setup_field = Submit;
         }
         Submit => {
-            if app.repo_path.is_some() && app.base_branch.is_some() && app.compare_branch.is_some() {
+            if app.repo_path.is_some() && app.base_branch.is_some() && app.compare_branch.is_some()
+            {
                 kick_off_load_diff(app, tx);
                 kick_off_load_commits(app, tx);
             } else {
@@ -984,13 +993,17 @@ fn ensure_blame_for_visible(app: &mut App, tx: &UnboundedSender<AppEvent>) {
     if !app.blame_enabled {
         return;
     }
-    let Some(repo) = app.repo_path.clone() else { return };
+    let Some(repo) = app.repo_path.clone() else {
+        return;
+    };
     let file = match app.screen {
         Screen::Fullscreen => app.files.get(app.fullscreen_idx).cloned(),
         _ => app.current_file().cloned(),
     };
     let Some(file) = file else { return };
-    let Some(target) = app.blame_target_for(&file) else { return };
+    let Some(target) = app.blame_target_for(&file) else {
+        return;
+    };
     if app.blame_cache.contains_key(&target) || app.blame_pending.contains(&target) {
         return;
     }
@@ -1014,27 +1027,41 @@ fn picker_items_for(app: &App, slot: BranchSlot) -> Vec<String> {
 }
 
 fn kick_off_load_branches(app: &mut App, tx: &UnboundedSender<AppEvent>) {
-    let Some(repo) = app.repo_path.clone() else { return };
+    let Some(repo) = app.repo_path.clone() else {
+        return;
+    };
     app.req_ids.branches += 1;
     app.pending.branches = true;
-    tasks::spawn_load_branches(tx.clone(), app.req_ids.branches, repo, app.include_remote_branches);
+    tasks::spawn_load_branches(
+        tx.clone(),
+        app.req_ids.branches,
+        repo,
+        app.include_remote_branches,
+    );
 }
 
 fn kick_off_load_diff(app: &mut App, tx: &UnboundedSender<AppEvent>) {
-    let (Some(repo), Some(base), Some(compare)) =
-        (app.repo_path.clone(), app.base_branch.clone(), app.compare_branch.clone())
-    else { return };
+    let (Some(repo), Some(base), Some(compare)) = (
+        app.repo_path.clone(),
+        app.base_branch.clone(),
+        app.compare_branch.clone(),
+    ) else {
+        return;
+    };
     app.req_ids.diff += 1;
     app.pending.diff = true;
     tasks::spawn_load_diff(tx.clone(), app.req_ids.diff, repo, base, compare);
 }
 
 fn kick_off_load_commits(app: &mut App, tx: &UnboundedSender<AppEvent>) {
-    let (Some(repo), Some(base), Some(compare)) =
-        (app.repo_path.clone(), app.base_branch.clone(), app.compare_branch.clone())
-    else { return };
+    let (Some(repo), Some(base), Some(compare)) = (
+        app.repo_path.clone(),
+        app.base_branch.clone(),
+        app.compare_branch.clone(),
+    ) else {
+        return;
+    };
     app.req_ids.commits += 1;
     app.pending.commits = true;
     tasks::spawn_load_commits(tx.clone(), app.req_ids.commits, repo, base, compare);
 }
-

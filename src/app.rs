@@ -128,18 +128,14 @@ fn find_all_substr(hay: &str, needle: &[u8], case_sensitive: bool) -> Vec<(usize
     let h = hay.as_bytes();
     let mut i = 0;
     while i + needle.len() <= h.len() {
-        let bytes_match = h[i..i + needle.len()]
-            .iter()
-            .zip(needle)
-            .all(|(a, b)| {
-                if case_sensitive {
-                    a == b
-                } else {
-                    a.eq_ignore_ascii_case(b)
-                }
-            });
-        let on_boundary =
-            hay.is_char_boundary(i) && hay.is_char_boundary(i + needle.len());
+        let bytes_match = h[i..i + needle.len()].iter().zip(needle).all(|(a, b)| {
+            if case_sensitive {
+                a == b
+            } else {
+                a.eq_ignore_ascii_case(b)
+            }
+        });
+        let on_boundary = hay.is_char_boundary(i) && hay.is_char_boundary(i + needle.len());
         if bytes_match && on_boundary {
             out.push((i, i + needle.len()));
         }
@@ -257,7 +253,11 @@ impl TextInput {
         if byte_pos >= self.buffer.len() {
             return;
         }
-        let next = self.buffer[byte_pos..].chars().next().map(|c| c.len_utf8()).unwrap_or(0);
+        let next = self.buffer[byte_pos..]
+            .chars()
+            .next()
+            .map(|c| c.len_utf8())
+            .unwrap_or(0);
         self.buffer.replace_range(byte_pos..byte_pos + next, "");
     }
 
@@ -347,7 +347,9 @@ impl Picker {
                 .enumerate()
                 .filter_map(|(i, s)| {
                     let haystack = Utf32Str::new(s, &mut buf);
-                    pattern.score(haystack, &mut matcher).map(|score| (score, i))
+                    pattern
+                        .score(haystack, &mut matcher)
+                        .map(|score| (score, i))
                 })
                 .collect();
             scored.sort_by_key(|b| std::cmp::Reverse(b.0));
@@ -371,7 +373,9 @@ impl Picker {
     }
 
     pub fn current(&self) -> Option<&String> {
-        self.filtered.get(self.selected).and_then(|i| self.items.get(*i))
+        self.filtered
+            .get(self.selected)
+            .and_then(|i| self.items.get(*i))
     }
 }
 
@@ -762,15 +766,14 @@ impl App {
     }
 
     pub fn load_review(&mut self) {
-        if let (Some(repo), Some(base), Some(compare), Some(store)) =
-            (&self.repo_path, &self.base_branch, &self.compare_branch, self.store.as_ref())
-        {
-            self.reviewed = store.load_reviewed(
-                &repo.display().to_string(),
-                base,
-                compare,
-                &self.files,
-            );
+        if let (Some(repo), Some(base), Some(compare), Some(store)) = (
+            &self.repo_path,
+            &self.base_branch,
+            &self.compare_branch,
+            self.store.as_ref(),
+        ) {
+            self.reviewed =
+                store.load_reviewed(&repo.display().to_string(), base, compare, &self.files);
         }
     }
 
@@ -817,7 +820,11 @@ impl App {
                         _ => continue,
                     };
                     for (s, e) in find_all_substr(text, needle, case_sensitive) {
-                        matches.push(DiffMatch { line: i, start: s, end: e });
+                        matches.push(DiffMatch {
+                            line: i,
+                            start: s,
+                            end: e,
+                        });
                     }
                 }
             }
@@ -825,9 +832,7 @@ impl App {
         let search = self.diff_search.as_mut().unwrap();
         let prev_count = search.matches.len();
         search.matches = matches;
-        if search.matches.is_empty() {
-            search.current = 0;
-        } else if prev_count == 0 || search.current >= search.matches.len() {
+        if search.matches.is_empty() || prev_count == 0 || search.current >= search.matches.len() {
             search.current = 0;
         }
     }
@@ -838,9 +843,15 @@ impl App {
     /// its content, so matches there stay near the edge instead of leaving
     /// empty space.
     pub fn scroll_to_current_match(&mut self) {
-        let Some(search) = self.diff_search.as_ref() else { return };
-        let Some(m) = search.matches.get(search.current).copied() else { return };
-        let Some(file) = self.diff_visible_file() else { return };
+        let Some(search) = self.diff_search.as_ref() else {
+            return;
+        };
+        let Some(m) = search.matches.get(search.current).copied() else {
+            return;
+        };
+        let Some(file) = self.diff_visible_file() else {
+            return;
+        };
         let path = file.path.clone();
         let rendered = rendered_row_for_match(file, self.diff_mode, m.line) as i32;
         let height = self.diff_view_height.get().max(4) as i32;
@@ -861,7 +872,11 @@ impl App {
         // The working-tree pseudo-ref isn't a real git ref. Blame the HEAD
         // contents instead so users still see committed authorship; lines
         // added since HEAD simply won't have blame data, which is fine.
-        let r = if crate::git::is_working_tree(&r) { "HEAD".to_string() } else { r };
+        let r = if crate::git::is_working_tree(&r) {
+            "HEAD".to_string()
+        } else {
+            r
+        };
         Some((r, file.path.clone()))
     }
 }
@@ -1035,10 +1050,7 @@ mod tests {
 
     #[test]
     fn picker_with_selected_falls_back_when_missing() {
-        let p = Picker::with_selected(
-            vec!["main".into(), "develop".into()],
-            Some("not-in-list"),
-        );
+        let p = Picker::with_selected(vec!["main".into(), "develop".into()], Some("not-in-list"));
         // Falls back to first item, doesn't panic.
         assert_eq!(p.current().map(String::as_str), Some("main"));
     }

@@ -81,7 +81,13 @@ impl Store {
         }
     }
 
-    pub fn load_reviewed(&self, repo: &str, base: &str, compare: &str, files: &[FileChange]) -> HashSet<String> {
+    pub fn load_reviewed(
+        &self,
+        repo: &str,
+        base: &str,
+        compare: &str,
+        files: &[FileChange],
+    ) -> HashSet<String> {
         let key = make_key(repo, base, compare);
         let snapshot = snapshot_for(files);
         match self.state.entries.get(&key) {
@@ -178,7 +184,9 @@ mod tests {
         };
         let files = vec![fc("a.rs"), fc("b.rs")];
         let reviewed: HashSet<String> = ["a.rs".to_string()].into_iter().collect();
-        store.save_reviewed("/r", "main", "feat", &files, &reviewed).unwrap();
+        store
+            .save_reviewed("/r", "main", "feat", &files, &reviewed)
+            .unwrap();
 
         let txt = fs::read_to_string(&path).unwrap();
         let parsed: StateFile = serde_json::from_str(&txt).unwrap();
@@ -196,11 +204,16 @@ mod tests {
         };
         let original = vec![fc("a.rs"), fc("b.rs")];
         let reviewed: HashSet<String> = ["a.rs".to_string()].into_iter().collect();
-        store.save_reviewed("/r", "main", "feat", &original, &reviewed).unwrap();
+        store
+            .save_reviewed("/r", "main", "feat", &original, &reviewed)
+            .unwrap();
 
         let changed = vec![fc("a.rs"), fc("c.rs")];
         let loaded = store.load_reviewed("/r", "main", "feat", &changed);
-        assert!(loaded.is_empty(), "snapshot mismatch should return empty set");
+        assert!(
+            loaded.is_empty(),
+            "snapshot mismatch should return empty set"
+        );
     }
 
     #[test]
@@ -213,7 +226,9 @@ mod tests {
         };
         let files = vec![fc("a.rs"), fc("b.rs")];
         let reviewed: HashSet<String> = ["b.rs".to_string()].into_iter().collect();
-        store.save_reviewed("/r", "main", "feat", &files, &reviewed).unwrap();
+        store
+            .save_reviewed("/r", "main", "feat", &files, &reviewed)
+            .unwrap();
 
         let loaded = store.load_reviewed("/r", "main", "feat", &files);
         assert_eq!(loaded, reviewed);

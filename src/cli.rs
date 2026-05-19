@@ -2,7 +2,10 @@ use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
-#[command(name = "difiko", about = "Keyboard-driven TUI for reviewing local git PRs")]
+#[command(
+    name = "difiko",
+    about = "Keyboard-driven TUI for reviewing local git PRs"
+)]
 pub struct Cli {
     /// Path to a local git repository (defaults to current directory if it is a git repo).
     #[arg(long)]

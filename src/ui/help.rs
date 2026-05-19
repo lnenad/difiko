@@ -13,7 +13,10 @@ pub fn render(f: &mut Frame, _app: &App) {
                 ("?  /  F1", "toggle this help"),
                 (":", "command palette  (Review / Fullscreen)"),
                 ("Ctrl-c", "quit from any screen"),
-                ("q", "quit  (Review only — typeable in Repo field, exits fullscreen otherwise)"),
+                (
+                    "q",
+                    "quit  (Review only — typeable in Repo field, exits fullscreen otherwise)",
+                ),
                 ("Esc", "close modal / exit fullscreen / back to Setup"),
             ],
         ),
@@ -25,7 +28,10 @@ pub fn render(f: &mut Frame, _app: &App) {
                 ("↑ / ↓", "cycle directory matches under cursor"),
                 ("Shift-→", "accept highlighted directory"),
                 ("Enter (Repo)", "load branches at this path"),
-                ("Enter (Base / Compare)", "open branch picker  (lands on current value)"),
+                (
+                    "Enter (Base / Compare)",
+                    "open branch picker  (lands on current value)",
+                ),
                 ("Enter (Remote)", "toggle include-remote-branches"),
                 ("Enter (Submit)", "load diff (after both branches set)"),
                 ("Esc", "clear branches & selections, refocus Repo"),
@@ -54,9 +60,15 @@ pub fn render(f: &mut Frame, _app: &App) {
                 ("F", "fullscreen current file"),
                 ("r", "reload diff"),
                 ("B", "branch picker"),
-                ("R", "clear reviewed set  (press twice within 2s to confirm)"),
+                (
+                    "R",
+                    "clear reviewed set  (press twice within 2s to confirm)",
+                ),
                 ("PgDn / PgUp", "page scroll diff  (Diff pane)"),
-                ("Esc", "back to Setup, focus Compare  (state preserved; Esc again resets)"),
+                (
+                    "Esc",
+                    "back to Setup, focus Compare  (state preserved; Esc again resets)",
+                ),
                 ("q", "quit"),
             ],
         ),
@@ -103,7 +115,9 @@ pub fn render(f: &mut Frame, _app: &App) {
         }
         lines.push(Line::from(Span::styled(
             (*title).to_string(),
-            Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
         )));
         for (k, label) in rows {
             lines.push(Line::from(vec![

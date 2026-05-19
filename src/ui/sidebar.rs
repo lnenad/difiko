@@ -33,7 +33,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         SidebarMode::Flat => app
             .files
             .iter()
-            .map(|f| ListItem::new(Line::from(format_flat_row(f, app.reviewed.contains(&f.path)))))
+            .map(|f| {
+                ListItem::new(Line::from(format_flat_row(
+                    f,
+                    app.reviewed.contains(&f.path),
+                )))
+            })
             .collect(),
         SidebarMode::Tree => {
             let by_path: HashMap<&str, &FileChange> =
@@ -45,12 +50,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         }
     };
 
-    let list = List::new(items)
-        .highlight_style(if focused {
-            theme::highlight_style()
-        } else {
-            theme::dim_highlight_style()
-        });
+    let list = List::new(items).highlight_style(if focused {
+        theme::highlight_style()
+    } else {
+        theme::dim_highlight_style()
+    });
     let mut state = ListState::default();
     state.select(Some(app.sidebar_selected));
     f.render_stateful_widget(list, inner, &mut state);
@@ -81,13 +85,23 @@ fn format_tree_row(
     by_path: &HashMap<&str, &FileChange>,
 ) -> Vec<Span<'static>> {
     match row {
-        TreeRow::Dir { label, depth, collapsed, .. } => {
+        TreeRow::Dir {
+            label,
+            depth,
+            collapsed,
+            ..
+        } => {
             let indent = "  ".repeat(*depth);
             let caret = if *collapsed { "▸" } else { "▾" };
             vec![
                 Span::raw(indent),
                 Span::styled(format!("{caret} "), Style::default().fg(theme::DIM)),
-                Span::styled(format!("{label}/"), Style::default().fg(theme::ACCENT_DIM).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    format!("{label}/"),
+                    Style::default()
+                        .fg(theme::ACCENT_DIM)
+                        .add_modifier(Modifier::BOLD),
+                ),
             ]
         }
         TreeRow::File { label, depth, path } => {
@@ -101,11 +115,18 @@ fn format_tree_row(
             };
             let file = by_path.get(path.as_str()).copied();
             let status_letter = file.map(|f| f.status.short()).unwrap_or(" ");
-            let status_color = file.map(|f| theme::status_color(f.status)).unwrap_or(theme::DIM);
+            let status_color = file
+                .map(|f| theme::status_color(f.status))
+                .unwrap_or(theme::DIM);
             vec![
                 Span::raw(indent),
                 Span::styled(mark.to_string(), mark_style),
-                Span::styled(format!("{status_letter} "), Style::default().fg(status_color).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    format!("{status_letter} "),
+                    Style::default()
+                        .fg(status_color)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(label.clone()),
             ]
         }
