@@ -1,5 +1,9 @@
 # difiko
 
+[![CI](https://github.com/lnenad/difiko/actions/workflows/ci.yml/badge.svg)](https://github.com/lnenad/difiko/actions/workflows/ci.yml)
+[![Release](https://github.com/lnenad/difiko/actions/workflows/release.yml/badge.svg)](https://github.com/lnenad/difiko/actions/workflows/release.yml)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+
 A keyboard-driven terminal UI for reviewing local git PRs. Pick two refs, walk
 file diffs in a sidebar, mark files reviewed, filter by commit, and view blame —
 all without leaving your terminal. Single static binary, no server.
