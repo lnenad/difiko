@@ -52,25 +52,37 @@ line's `base_style`:
 
 1. **Syntax** (`ui::syntax`) — syntect highlights the file's diff content
    as one pass (so multi-line strings/comments keep state). Output is
-   cached on `App.syntax_cache: RefCell<HashMap<path, Vec<Vec<(Style,
-   String)>>>>`. The cache is cleared when a fresh diff loads or when
-   syntax is toggled off. Add/Del lines switch from green/red **fg** to a
-   green/red 256-color **bg tint** (`theme::ADD_BG`/`DEL_BG`) when syntax
-   is on, so the syntect-provided fg has somewhere to live.
-2. **Word diff** (`ui::word_diff`) — `similar::TextDiff::from_words` over
-   adjacent `-`/`+` pairs (paired positionally within each run).
+   cached on `App.syntax_cache: RefCell<ui::syntax::FileHighlights>`
+   (alias for `HashMap<path, Vec<Vec<(Style, String)>>>`). The cache is
+   cleared when a fresh diff loads or when syntax is toggled off. When
+   syntax is on, Add/Del rows switch from green/red **fg** to a subtle
+   green/red **truecolor bg tint** (`theme::ADD_BG`/`DEL_BG`) so the
+   syntect-provided fg has somewhere to live. The colored prefix
+   (`+ ` / `- `) and line numbers always keep their `theme::ADD`/`DEL`
+   fg so rows stay distinguishable on terminals that drop truecolor
+   backgrounds (notably macOS Terminal.app).
+2. **Word diff** (`ui::word_diff`) — `similar::TextDiff::from_chars`
+   over adjacent `-`/`+` pairs (paired positionally within each run).
+   We pick char granularity over `from_words` because the word
+   tokenizer treats `"0.1.3"` and similar literals as a single token,
+   so a one-digit edit would light up the whole quoted string.
    `compute_word_pairings` returns byte ranges per `diff_lines` index;
-   changed bytes render BOLD, unchanged bytes within a line that has
-   *any* changes render DIM. Recomputed per render — cheap for normal
-   file sizes; revisit if perf bites on huge diffs.
+   `resolve_style` paints a **stronger bg overlay**
+   (`theme::ADD_BG_STRONG`/`DEL_BG_STRONG`) over those byte ranges and
+   adds BOLD — the two-tier look you see in delta / Claude Code.
+   Recomputed per render; cheap for normal file sizes, revisit if perf
+   bites on huge diffs.
 3. **Search** — overrides everything else when a byte range is fully
-   inside a match.
+   inside a match (`bg=Magenta, fg=White, bold, underlined` for the
+   active match; `bg=Yellow, fg=Black, bold` for others).
 
 Renderers prepare a `DiffRenderCtx { blame, search, syntax,
 word_pairings }` and pass it to `build_unified_lines` /
 `build_split_lines`. Both Review and Fullscreen prepare the same ctx
 shape, holding the syntax cache `Ref` for the duration of the render
-call.
+call. When changing the rendering pipeline, also re-read
+`resolve_style` — the search → syntax → word-diff layering order is
+load-bearing.
 
 ### Pre-commit hook
 

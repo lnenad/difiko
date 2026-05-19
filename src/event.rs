@@ -411,6 +411,8 @@ fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSender<AppEvent>
                 "toggle-commits".into(),
                 "split-diff".into(),
                 "unified-diff".into(),
+                "toggle-word-diff".into(),
+                "toggle-syntax".into(),
                 "quit".into(),
             ];
             app.modal = Some(Modal::CommandPalette {
@@ -936,6 +938,22 @@ fn run_command(app: &mut App, cmd: &str, tx: &UnboundedSender<AppEvent>) {
         "toggle-commits" => app.commits_panel_visible = !app.commits_panel_visible,
         "split-diff" => app.diff_mode = crate::app::DiffMode::Split,
         "unified-diff" => app.diff_mode = crate::app::DiffMode::Unified,
+        "toggle-word-diff" => {
+            app.toggle_word_diff();
+            let on = app.config.word_diff;
+            app.toast(
+                format!("Word diff: {}", if on { "on" } else { "off" }),
+                ToastKind::Info,
+            );
+        }
+        "toggle-syntax" => {
+            app.toggle_syntax_highlight();
+            let on = app.config.syntax_highlight;
+            app.toast(
+                format!("Syntax highlight: {}", if on { "on" } else { "off" }),
+                ToastKind::Info,
+            );
+        }
         "quit" => app.should_quit = true,
         _ => {}
     }

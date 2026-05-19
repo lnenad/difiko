@@ -85,7 +85,7 @@ Requires the Rust 2021 toolchain (1.70+ should be fine; tested on 1.95).
 
 ```sh
 cargo build --release
-# binary at target/release/difiko (~1.6 MB stripped)
+# binary at target/release/difiko (~4.5 MB stripped — syntect carries bundled syntaxes)
 ```
 
 ```sh
@@ -139,7 +139,7 @@ Three panes — Sidebar | Diff | Commits — with focused-pane border highlighti
 │┌─ Commits (3) ─────────────────────────────────────────────────────────┐│
 ││  abc1234  Refactor sidebar           nenad   2026-05-04                ││
 │└───────────────────────────────────────────────────────────────────────┘│
-└ j/k:scroll  J/K:next file  m:reviewed  b:blame  u:split  F:fullscreen ?─┘
+└ j/k:scroll  J/K:next file  m:reviewed  b:blame  u:split  W:word  S:syntax ─┘
 ```
 
 ### Fullscreen
@@ -284,10 +284,17 @@ notice rather than silently losing data.
   `tokio::process::Command`.
 - **Syntax highlighting** via `syntect` (default themes bundled). Each file's
   diff content is highlighted in a single pass so multi-line constructs
-  keep context. Output is cached per-file until the diff reloads.
-- **Word diff** via `similar`. Adjacent `-`/`+` lines are paired and
-  word-LCS'd; the changed words render bold and the unchanged words dim,
-  so the eye lands on the actual edit.
+  (block comments, multi-line strings) keep context across lines. Output
+  is cached per-file until the diff reloads or the user toggles syntax
+  off. When syntax is on, add/del rows get a subtle dark green/red
+  background tint so they stay visually distinct from context lines.
+- **Word diff** via `similar` at **character** granularity. Adjacent
+  `-`/`+` lines are paired positionally within each run; the renderer
+  paints a stronger bg overlay (over the subtle line tint) on the
+  precise bytes that changed — same two-tier look as delta / Claude
+  Code. Char-level is used instead of word-level because the word
+  tokenizer treats quoted strings and dotted numbers as single tokens,
+  which would highlight all of `"0.1.3"` instead of just the `3`.
 - **Async**: git operations don't block the UI; results flow back through an
   `mpsc` channel and are matched against monotonic request IDs so stale results
   are discarded after navigation.
