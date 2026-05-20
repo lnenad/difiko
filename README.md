@@ -1,16 +1,36 @@
-# difiko
+<h1 align="center">difiko</h1>
 
-[![CI](https://github.com/lnenad/difiko/actions/workflows/ci.yml/badge.svg)](https://github.com/lnenad/difiko/actions/workflows/ci.yml)
-[![Release](https://github.com/lnenad/difiko/actions/workflows/release.yml/badge.svg)](https://github.com/lnenad/difiko/actions/workflows/release.yml)
-[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+<p align="center"><em>Review local git PRs from your terminal — no browser, no server, no <code>gh</code> dance.</em></p>
 
-A keyboard-driven terminal UI for reviewing local git PRs. Pick two refs, walk
-file diffs in a sidebar, mark files reviewed, filter by commit, and view blame —
-all without leaving your terminal. Single static binary, no server.
+<p align="center">
+  <a href="https://github.com/lnenad/difiko/releases/latest"><img src="https://img.shields.io/github/v/release/lnenad/difiko?style=flat-square&color=blue&label=release" alt="Latest release"></a>
+  <a href="https://github.com/lnenad/difiko/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/lnenad/difiko/ci.yml?style=flat-square&label=ci" alt="CI"></a>
+  <a href="https://github.com/lnenad/difiko/releases"><img src="https://img.shields.io/github/downloads/lnenad/difiko/total?style=flat-square&color=brightgreen" alt="Downloads"></a>
+  <a href="#license"><img src="https://img.shields.io/badge/license-MIT_OR_Apache--2.0-blue?style=flat-square" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/built_with-Rust-orange?style=flat-square&logo=rust&logoColor=white" alt="Built with Rust"></a>
+  <a href="https://github.com/lnenad/difiko/stargazers"><img src="https://img.shields.io/github/stars/lnenad/difiko?style=flat-square&color=yellow" alt="GitHub stars"></a>
+</p>
+
+Pick two refs, walk file diffs in a sidebar, mark files reviewed, filter by
+commit, view blame. Works on any local repo — no remote setup, no auth, no
+hosted UI. Single static binary.
 
 <!-- TODO: record a demo with `vhs demo.tape` and commit demo.gif, then drop it here:
-![difiko demo](demo.gif)
+<p align="center"><img src="demo.gif" alt="difiko demo" width="780"></p>
 -->
+
+## Features
+
+- **Side-by-side or unified diff**, with optional **syntect-powered syntax
+  highlighting** and **character-level word-diff overlay**
+- **Fuzzy file & branch pickers**, tree / flat sidebar, mark-reviewed state that
+  survives navigation and restarts
+- **Inline git blame gutter** — author + short hash next to every line, on demand
+- **Per-commit diff filtering** from the commits panel, plus a
+  `[working tree]` pseudo-ref for uncommitted changes
+- **User-defined theme** via `theme.json` — open it from the app with **Ctrl+T**
+- **Single binary**, ~4.5 MB stripped. No daemon, no IPC, no network. Just
+  `git` via `tokio::process::Command`.
 
 ## Install
 
@@ -147,19 +167,27 @@ Three panes — Sidebar | Diff | Commits — with focused-pane border highlighti
 Single-file view with prev/next file navigation. Same diff renderer, no
 sidebar/commits.
 
-## Keybinding cheat sheet
+## Keybindings
 
-Press **`?`** at any time for the in-app help overlay.
-
-### Global
+Press **`?`** at any time for the in-app help overlay — it lists every binding
+in context. The highlights:
 
 | Key         | Action                                                |
 | ----------- | ----------------------------------------------------- |
 | `?` / F1    | Toggle help overlay                                   |
 | `:`         | Command palette (Review / Fullscreen)                 |
+| `Ctrl-t`    | Edit `theme.json` in your OS default app              |
 | `Ctrl-c`    | Quit (any screen)                                     |
-| `q`         | Quit (Review screen; exits Fullscreen)                |
-| `Esc`       | Close modal → exit Fullscreen → soft-back to Setup (Compare focused, state kept) → full reset |
+| `j` / `k`   | Move / scroll                                         |
+| `Tab`       | Cycle pane focus (Sidebar → Diff → Commits)           |
+| `m`         | Mark current file reviewed                            |
+| `u`         | Toggle Unified / Split diff                           |
+| `F`         | Fullscreen current file                               |
+| `/`         | Fuzzy filter files                                    |
+| `Esc`       | Close modal → exit Fullscreen → back to Setup → reset |
+
+<details>
+<summary><strong>Full cheat sheet</strong> — every binding by screen / pane</summary>
 
 ### Setup — Repository field
 
@@ -244,6 +272,8 @@ Press **`?`** at any time for the in-app help overlay.
 | W              | Toggle word diff                    |
 | S              | Toggle syntax highlighting          |
 | q / Esc        | Exit fullscreen                     |
+
+</details>
 
 ## Config
 
