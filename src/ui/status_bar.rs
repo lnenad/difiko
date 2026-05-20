@@ -74,7 +74,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     if app.pending.diff
         || app.pending.commits
         || app.pending.branches
-        || app.pending.commit_diff.is_some()
+        || app.pending.commit_diff.is_active()
     {
         let frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         let frame = frames[(app.spinner_tick as usize) % frames.len()];

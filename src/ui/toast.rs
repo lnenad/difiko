@@ -5,12 +5,15 @@ use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
+/// Each toast renders inside a 3-row block (1 for text, 2 for borders).
+const TOAST_HEIGHT: u16 = 3;
+
 pub fn render(f: &mut Frame, app: &App) {
     let area = f.area();
     let mut y = area.y + area.height.saturating_sub(2);
     for toast in app.toasts.iter().rev() {
         let width = (toast.message.chars().count() as u16 + 4).min(area.width.saturating_sub(2));
-        let height = 3u16;
+        let height = TOAST_HEIGHT;
         if y < height {
             break;
         }

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum FileStatus {
@@ -77,12 +78,14 @@ pub struct FileChange {
 }
 
 impl FileChange {
-    pub fn display_name(&self) -> String {
+    /// Header label for the file. Returns a borrow of `self.path` in the
+    /// common (non-rename) case so callers don't allocate per render.
+    pub fn display_name(&self) -> Cow<'_, str> {
         match (&self.old_path, self.status) {
             (Some(old), FileStatus::Renamed | FileStatus::Copied) if old != &self.path => {
-                format!("{} → {}", old, self.path)
+                Cow::Owned(format!("{} → {}", old, self.path))
             }
-            _ => self.path.clone(),
+            _ => Cow::Borrowed(self.path.as_str()),
         }
     }
 }

@@ -6,6 +6,13 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
+/// Max completion rows shown in the repo-path dropdown before scrolling.
+const DROPDOWN_MAX_VISIBLE: u16 = 6;
+/// Minimum width of the dropdown so short candidates still look like a list.
+const DROPDOWN_MIN_WIDTH: u16 = 20;
+/// Horizontal padding around the dropdown (in cells, on the right side).
+const DROPDOWN_RIGHT_PAD: u16 = 4;
+
 pub fn render(f: &mut Frame, app: &App) {
     let outer = Layout::default()
         .direction(Direction::Vertical)
@@ -63,8 +70,7 @@ fn render_repo_input(f: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
-    let max_visible: u16 = 6;
-    let visible = (app.repo_completions.len() as u16).min(max_visible);
+    let visible = (app.repo_completions.len() as u16).min(DROPDOWN_MAX_VISIBLE);
     let height = visible + 2;
     let frame_area = f.area();
     if repo_area.y + repo_area.height + height > frame_area.y + frame_area.height {
@@ -76,10 +82,12 @@ fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
         .map(|s| s.chars().count() as u16)
         .max()
         .unwrap_or(0)
-        + 4;
-    let width = widest
-        .max(20)
-        .min(frame_area.width.saturating_sub(repo_area.x + 4));
+        + DROPDOWN_RIGHT_PAD;
+    let width = widest.max(DROPDOWN_MIN_WIDTH).min(
+        frame_area
+            .width
+            .saturating_sub(repo_area.x + DROPDOWN_RIGHT_PAD),
+    );
     let drop_rect = Rect {
         x: repo_area.x + 2,
         y: repo_area.y + repo_area.height,
@@ -105,7 +113,7 @@ fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
     f.render_widget(block, drop_rect);
 
     let n = app.repo_completions.len();
-    let cap = max_visible as usize;
+    let cap = DROPDOWN_MAX_VISIBLE as usize;
     let start = if n <= cap || app.repo_completion_index < cap / 2 {
         0
     } else if app.repo_completion_index + cap / 2 >= n {

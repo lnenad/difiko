@@ -27,6 +27,20 @@ pub const STATUS_MOD: Color = Color::Yellow;
 pub const STATUS_DEL: Color = Color::Red;
 pub const STATUS_REN: Color = Color::Magenta;
 
+/// Background used by `highlight_style()` / `dim_highlight_style()` and the
+/// modal-picker row highlight. Same blueish tint reused in multiple places.
+pub const HIGHLIGHT_BG: Color = Color::Rgb(40, 50, 70);
+pub const HIGHLIGHT_BG_DIM: Color = Color::Rgb(30, 35, 50);
+
+/// Diff-search highlight: the *current* match overrides all other styling
+/// (syntax / word-diff / base) with a strong magenta-on-white block.
+pub const SEARCH_CURRENT_BG: Color = Color::Magenta;
+pub const SEARCH_CURRENT_FG: Color = Color::White;
+/// Other (non-current) matches use a softer yellow-on-black so they're
+/// visible but don't compete with the active match.
+pub const SEARCH_OTHER_BG: Color = Color::Yellow;
+pub const SEARCH_OTHER_FG: Color = Color::Black;
+
 pub fn focused_border(focused: bool) -> Style {
     if focused {
         Style::default().fg(ACCENT).add_modifier(Modifier::BOLD)
@@ -41,12 +55,12 @@ pub fn label_style() -> Style {
 
 pub fn highlight_style() -> Style {
     Style::default()
-        .bg(Color::Rgb(40, 50, 70))
+        .bg(HIGHLIGHT_BG)
         .add_modifier(Modifier::BOLD)
 }
 
 pub fn dim_highlight_style() -> Style {
-    Style::default().bg(Color::Rgb(30, 35, 50))
+    Style::default().bg(HIGHLIGHT_BG_DIM)
 }
 
 pub fn status_color(status: crate::model::FileStatus) -> Color {

@@ -141,6 +141,65 @@ mod tests {
     }
 
     #[test]
+    fn empty_input_yields_empty_blame() {
+        let blame = parse_porcelain("");
+        assert!(blame.by_line.is_empty());
+    }
+
+    #[test]
+    fn cross_commit_caches_per_hash() {
+        // Two commits, one line each. Hash B reuses cached metadata if seen
+        // again; both lines should land with their own author/date.
+        let a = "a".repeat(40);
+        let b = "b".repeat(40);
+        let porcelain = format!(
+            "{a} 1 1 1\nauthor Alice\nauthor-time 1700000000\nauthor-tz +0000\nsummary x\nfilename foo\n\tline-a\n\
+             {b} 2 2 1\nauthor Bob\nauthor-time 1700086400\nauthor-tz +0000\nsummary y\nfilename foo\n\tline-b\n"
+        );
+        let blame = parse_porcelain(&porcelain);
+        assert_eq!(blame.by_line.len(), 2);
+        assert_eq!(blame.by_line[&1].author, "Alice");
+        assert_eq!(blame.by_line[&2].author, "Bob");
+        assert_eq!(blame.by_line[&1].short_hash, "aaaaaaa");
+        assert_eq!(blame.by_line[&2].short_hash, "bbbbbbb");
+    }
+
+    #[test]
+    fn malformed_tz_offset_defaults_to_zero() {
+        // tz offset must be exactly 5 chars; anything else falls back to 0.
+        assert_eq!(parse_tz_offset(""), 0);
+        assert_eq!(parse_tz_offset("+05"), 0);
+        assert_eq!(parse_tz_offset("0500"), 0); // missing sign
+        assert_eq!(parse_tz_offset("+0530"), 5 * 3600 + 30 * 60);
+        assert_eq!(parse_tz_offset("-0800"), -8 * 3600);
+    }
+
+    #[test]
+    fn non_hash_lines_are_ignored() {
+        // Garbage before the first commit-hash line — must not panic.
+        let porcelain =
+            "previous-filename foo\nboundary\nabc1234567890123456789012345678901234567 1 1 1\n\
+             author Z\nauthor-time 1700000000\nauthor-tz +0000\nsummary s\nfilename foo\n\tx\n";
+        let blame = parse_porcelain(porcelain);
+        assert_eq!(blame.by_line.len(), 1);
+        assert_eq!(blame.by_line[&1].author, "Z");
+    }
+
+    #[test]
+    fn invalid_hex_in_hash_position_is_ignored() {
+        // Right length but non-hex chars — must be rejected by is_commit_hash.
+        assert!(!is_commit_hash(&"z".repeat(40)));
+        assert!(!is_commit_hash(&"a".repeat(39))); // wrong length
+        assert!(is_commit_hash(&"a".repeat(40)));
+        assert!(is_commit_hash(&"f".repeat(64)));
+    }
+
+    #[test]
+    fn format_date_ymd_zero_is_empty() {
+        assert_eq!(format_date_ymd(0), "");
+    }
+
+    #[test]
     fn applies_tz_offset_to_date() {
         // 1700000000 = 2023-11-14 22:13:20 UTC. With +0500 offset, local date
         // is 2023-11-15 (next day).

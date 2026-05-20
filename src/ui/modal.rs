@@ -6,6 +6,11 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph};
 use ratatui::Frame;
 
+/// Width/height (as percent of viewport) of the centered fuzzy-picker modal.
+pub const PICKER_MODAL_PCT: (u16, u16) = (60, 60);
+/// Width/height of the centered error modal — wider than tall.
+pub const ERROR_MODAL_PCT: (u16, u16) = (60, 25);
+
 pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let pop = Layout::default()
         .direction(Direction::Vertical)
@@ -26,7 +31,7 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 }
 
 pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
-    let area = centered_rect(60, 60, f.area());
+    let area = centered_rect(PICKER_MODAL_PCT.0, PICKER_MODAL_PCT.1, f.area());
     f.render_widget(Clear, area);
     let block = Block::default()
         .borders(Borders::ALL)
@@ -58,7 +63,7 @@ pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
     let list = List::new(items).highlight_symbol("▶ ").highlight_style(
         Style::default()
             .fg(theme::ACCENT)
-            .bg(ratatui::style::Color::Rgb(40, 50, 70))
+            .bg(theme::HIGHLIGHT_BG)
             .add_modifier(Modifier::BOLD),
     );
     let mut state = ListState::default();
@@ -69,7 +74,7 @@ pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
 }
 
 pub fn render_error(f: &mut Frame, message: &str) {
-    let area = centered_rect(60, 25, f.area());
+    let area = centered_rect(ERROR_MODAL_PCT.0, ERROR_MODAL_PCT.1, f.area());
     f.render_widget(Clear, area);
     let block = Block::default()
         .borders(Borders::ALL)
