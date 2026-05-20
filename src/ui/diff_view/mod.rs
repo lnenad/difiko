@@ -53,8 +53,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             .border_style(theme::focused_border(focused));
         let inner = block.inner(area);
         f.render_widget(block, area);
-        let p =
-            Paragraph::new("Select a file in the sidebar.").style(Style::default().fg(theme::DIM));
+        let p = Paragraph::new("Select a file in the sidebar.")
+            .style(Style::default().fg(theme::dim()));
         f.render_widget(p, inner);
         return;
     };
@@ -131,27 +131,27 @@ pub fn render_search_bar(f: &mut Frame, area: Rect, search: &DiffSearch) {
         Span::styled(
             "/".to_string(),
             Style::default()
-                .fg(theme::ACCENT)
+                .fg(theme::accent())
                 .add_modifier(Modifier::BOLD),
         ),
         Span::raw(search.query.buffer.clone()),
-        Span::styled("▏", Style::default().fg(theme::ACCENT)),
-        Span::styled(counter, Style::default().fg(theme::DIM)),
+        Span::styled("▏", Style::default().fg(theme::accent())),
+        Span::styled(counter, Style::default().fg(theme::dim())),
     ];
     let case_label = " Aa";
     let case_style = if search.case_sensitive {
         Style::default()
-            .fg(theme::ACCENT)
+            .fg(theme::accent())
             .add_modifier(Modifier::BOLD)
             .add_modifier(Modifier::UNDERLINED)
     } else {
-        Style::default().fg(theme::DIM)
+        Style::default().fg(theme::dim())
     };
     spans.push(Span::styled("  ".to_string(), Style::default()));
     spans.push(Span::styled(case_label.to_string(), case_style));
     spans.push(Span::styled(
         "   Enter:next  Shift-Enter:prev  Alt-c:case  Esc:close".to_string(),
-        Style::default().fg(theme::DIM),
+        Style::default().fg(theme::dim()),
     ));
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
@@ -170,18 +170,20 @@ pub fn file_header_spans(file: &FileChange, reviewed: bool) -> Vec<Span<'static>
         Span::raw("  "),
         Span::styled(
             format!("+{}", file.additions),
-            Style::default().fg(theme::ADD),
+            Style::default().fg(theme::add()),
         ),
         Span::raw(" "),
         Span::styled(
             format!("-{}", file.deletions),
-            Style::default().fg(theme::DEL),
+            Style::default().fg(theme::del()),
         ),
     ];
     if reviewed {
         spans.push(Span::styled(
             "  ✓ reviewed",
-            Style::default().fg(theme::ADD).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme::add())
+                .add_modifier(Modifier::BOLD),
         ));
     }
     spans.push(Span::raw(" "));

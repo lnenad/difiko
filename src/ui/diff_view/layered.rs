@@ -7,17 +7,17 @@ pub(super) fn add_base_style(syntax_on: bool) -> Style {
     if syntax_on {
         // Syntax owns the fg; ADD_BG is tuned subtle (very dark green) so
         // it differentiates the row without fighting syntax colors.
-        Style::default().bg(theme::ADD_BG)
+        Style::default().bg(theme::add_bg())
     } else {
-        Style::default().fg(theme::ADD)
+        Style::default().fg(theme::add())
     }
 }
 
 pub(super) fn del_base_style(syntax_on: bool) -> Style {
     if syntax_on {
-        Style::default().bg(theme::DEL_BG)
+        Style::default().bg(theme::del_bg())
     } else {
-        Style::default().fg(theme::DEL)
+        Style::default().fg(theme::del())
     }
 }
 
@@ -40,14 +40,14 @@ pub(super) fn line_search_matches(
 fn search_match_style(is_current: bool) -> Style {
     if is_current {
         Style::default()
-            .bg(theme::SEARCH_CURRENT_BG)
-            .fg(theme::SEARCH_CURRENT_FG)
+            .bg(theme::search_current_bg())
+            .fg(theme::search_current_fg())
             .add_modifier(Modifier::BOLD)
             .add_modifier(Modifier::UNDERLINED)
     } else {
         Style::default()
-            .bg(theme::SEARCH_OTHER_BG)
-            .fg(theme::SEARCH_OTHER_FG)
+            .bg(theme::search_other_bg())
+            .fg(theme::search_other_fg())
             .add_modifier(Modifier::BOLD)
     }
 }
@@ -166,10 +166,10 @@ fn resolve_style(
             // the two-tier look used by delta / Claude Code / GitHub:
             // subtle line tint + bright word tint. Bold helps when the
             // terminal doesn't render the stronger bg (Terminal.app).
-            let stronger = if base.bg == Some(theme::ADD_BG) {
-                Some(theme::ADD_BG_STRONG)
-            } else if base.bg == Some(theme::DEL_BG) {
-                Some(theme::DEL_BG_STRONG)
+            let stronger = if base.bg == Some(theme::add_bg()) {
+                Some(theme::add_bg_strong())
+            } else if base.bg == Some(theme::del_bg()) {
+                Some(theme::del_bg_strong())
             } else {
                 None
             };

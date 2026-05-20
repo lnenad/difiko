@@ -26,8 +26,8 @@ pub fn render(f: &mut Frame, app: &App) {
         };
         f.render_widget(Clear, rect);
         let color = match toast.kind {
-            ToastKind::Info => theme::ACCENT,
-            ToastKind::Error => theme::DEL,
+            ToastKind::Info => theme::accent(),
+            ToastKind::Error => theme::del(),
         };
         let block = Block::default()
             .borders(Borders::ALL)

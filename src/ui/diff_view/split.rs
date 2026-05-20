@@ -20,7 +20,7 @@ pub(super) fn render_split(
 ) {
     if file.binary {
         let p = Paragraph::new("Binary file — no diff to display.")
-            .style(Style::default().fg(theme::DIM));
+            .style(Style::default().fg(theme::dim()));
         f.render_widget(p, area);
         return;
     }
@@ -37,13 +37,13 @@ pub(super) fn render_split(
     let left_p = Paragraph::new(left).scroll((effective, scroll_h)).block(
         Block::default()
             .borders(Borders::RIGHT)
-            .border_style(Style::default().fg(theme::DIM))
-            .title(Span::styled(" old ", Style::default().fg(theme::DEL))),
+            .border_style(Style::default().fg(theme::dim()))
+            .title(Span::styled(" old ", Style::default().fg(theme::del()))),
     );
     let right_p = Paragraph::new(right).scroll((effective, scroll_h)).block(
         Block::default()
             .borders(Borders::NONE)
-            .title(Span::styled(" new ", Style::default().fg(theme::ADD))),
+            .title(Span::styled(" new ", Style::default().fg(theme::add()))),
     );
     f.render_widget(left_p, chunks[0]);
     f.render_widget(right_p, chunks[1]);
@@ -80,7 +80,7 @@ pub fn build_split_lines(
                 );
                 new_no = *new_start;
                 let hunk_style = Style::default()
-                    .fg(theme::HUNK)
+                    .fg(theme::hunk())
                     .add_modifier(Modifier::BOLD);
                 let mut lspans: Vec<Span<'static>> = Vec::new();
                 push_layered(
@@ -180,7 +180,7 @@ fn flush_split_pending(
             let mut spans: Vec<Span<'static>> = Vec::new();
             spans.push(Span::styled(
                 "- ".to_string(),
-                Style::default().fg(theme::DEL),
+                Style::default().fg(theme::del()),
             ));
             push_layered(
                 &mut spans,
@@ -202,7 +202,7 @@ fn flush_split_pending(
             let base = add_base_style(syntax_on);
             spans.push(Span::styled(
                 "+ ".to_string(),
-                Style::default().fg(theme::ADD),
+                Style::default().fg(theme::add()),
             ));
             push_layered(
                 &mut spans,

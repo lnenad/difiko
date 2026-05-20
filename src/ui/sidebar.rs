@@ -24,7 +24,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(block, area);
     if app.files.is_empty() {
         let p = ratatui::widgets::Paragraph::new("No files. Press 'r' to reload.")
-            .style(Style::default().fg(theme::DIM));
+            .style(Style::default().fg(theme::dim()));
         f.render_widget(p, inner);
         return;
     }
@@ -63,9 +63,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 fn format_flat_row(file: &crate::model::FileChange, reviewed: bool) -> Vec<Span<'static>> {
     let mark = if reviewed { "✓ " } else { "  " };
     let mark_style = if reviewed {
-        Style::default().fg(theme::ADD)
+        Style::default().fg(theme::add())
     } else {
-        Style::default().fg(theme::DIM)
+        Style::default().fg(theme::dim())
     };
     vec![
         Span::styled(mark.to_string(), mark_style),
@@ -95,11 +95,11 @@ fn format_tree_row(
             let caret = if *collapsed { "▸" } else { "▾" };
             vec![
                 Span::raw(indent),
-                Span::styled(format!("{caret} "), Style::default().fg(theme::DIM)),
+                Span::styled(format!("{caret} "), Style::default().fg(theme::dim())),
                 Span::styled(
                     format!("{label}/"),
                     Style::default()
-                        .fg(theme::ACCENT_DIM)
+                        .fg(theme::accent_dim())
                         .add_modifier(Modifier::BOLD),
                 ),
             ]
@@ -109,15 +109,15 @@ fn format_tree_row(
             let reviewed = app.reviewed.contains(path);
             let mark = if reviewed { "✓ " } else { "  " };
             let mark_style = if reviewed {
-                Style::default().fg(theme::ADD)
+                Style::default().fg(theme::add())
             } else {
-                Style::default().fg(theme::DIM)
+                Style::default().fg(theme::dim())
             };
             let file = by_path.get(path.as_str()).copied();
             let status_letter = file.map(|f| f.status.short()).unwrap_or(" ");
             let status_color = file
                 .map(|f| theme::status_color(f.status))
-                .unwrap_or(theme::DIM);
+                .unwrap_or(theme::dim());
             vec![
                 Span::raw(indent),
                 Span::styled(mark.to_string(), mark_style),

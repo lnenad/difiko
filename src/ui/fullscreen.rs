@@ -20,7 +20,7 @@ pub fn render(f: &mut Frame, app: &App) {
     let total = app.files.len();
     let idx = app.fullscreen_idx;
     let Some(file) = app.files.get(idx) else {
-        let p = Paragraph::new("No files to review.").style(Style::default().fg(theme::DIM));
+        let p = Paragraph::new("No files to review.").style(Style::default().fg(theme::dim()));
         f.render_widget(p, outer[2]);
         hint_bar::render(f, app, outer[3]);
         return;
@@ -31,14 +31,19 @@ pub fn render(f: &mut Frame, app: &App) {
     header_spans.extend(diff_view::file_header_spans(file, reviewed));
     header_spans.push(Span::styled(
         format!("  [{}/{}]", idx + 1, total),
-        Style::default().fg(theme::DIM),
+        Style::default().fg(theme::dim()),
     ));
     if matches!(app.diff_mode, DiffMode::Split) {
-        header_spans.push(Span::styled("  split", Style::default().fg(theme::ACCENT)));
+        header_spans.push(Span::styled(
+            "  split",
+            Style::default().fg(theme::accent()),
+        ));
     } else {
         header_spans.push(Span::styled(
             "  unified",
-            Style::default().fg(theme::DIM).add_modifier(Modifier::DIM),
+            Style::default()
+                .fg(theme::dim())
+                .add_modifier(Modifier::DIM),
         ));
     }
     f.render_widget(Paragraph::new(Line::from(header_spans)), outer[0]);

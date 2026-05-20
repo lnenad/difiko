@@ -63,7 +63,7 @@ fn render_repo_input(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(block, area);
     let mut spans = vec![Span::raw(app.repo_input.buffer.clone())];
     if focused {
-        spans.push(Span::styled("█", Style::default().fg(theme::ACCENT)));
+        spans.push(Span::styled("█", Style::default().fg(theme::accent())));
     }
     let p = Paragraph::new(Line::from(spans));
     f.render_widget(p, inner);
@@ -107,8 +107,8 @@ fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
     );
     let block = Block::default()
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(theme::DIM))
-        .title(Span::styled(title, Style::default().fg(theme::DIM)));
+        .border_style(Style::default().fg(theme::dim()))
+        .title(Span::styled(title, Style::default().fg(theme::dim())));
     let inner = block.inner(drop_rect);
     f.render_widget(block, drop_rect);
 
@@ -132,13 +132,13 @@ fn render_completion_dropdown(f: &mut Frame, app: &App, repo_area: Rect) {
             let marker = if selected { "▶ " } else { "  " };
             let style = if selected {
                 Style::default()
-                    .fg(theme::ACCENT)
+                    .fg(theme::accent())
                     .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
             Line::from(vec![
-                Span::styled(marker.to_string(), Style::default().fg(theme::ACCENT)),
+                Span::styled(marker.to_string(), Style::default().fg(theme::accent())),
                 Span::styled(format!("{name}/"), style),
             ])
         })
@@ -190,7 +190,7 @@ fn render_branch_list(
         } else {
             "No branches loaded. Tab to repo and press Enter."
         };
-        let p = Paragraph::new(msg).style(Style::default().fg(theme::DIM));
+        let p = Paragraph::new(msg).style(Style::default().fg(theme::dim()));
         f.render_widget(p, inner);
         return;
     }
@@ -204,7 +204,7 @@ fn render_branch_list(
             let marker = if is_selected { "▶ " } else { "  " };
             let style = if is_selected {
                 Style::default()
-                    .fg(theme::ACCENT)
+                    .fg(theme::accent())
                     .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
@@ -219,8 +219,8 @@ fn render_branch_list(
     f.render_widget(p, inner);
 
     if focused {
-        let hint =
-            Paragraph::new("Enter / Space / j / k to pick").style(Style::default().fg(theme::DIM));
+        let hint = Paragraph::new("Enter / Space / j / k to pick")
+            .style(Style::default().fg(theme::dim()));
         let h = Rect {
             x: inner.x,
             y: inner.y + inner.height.saturating_sub(1),
@@ -242,10 +242,10 @@ fn render_options(f: &mut Frame, app: &App, area: Rect) {
     let label_style = |focused| {
         if focused {
             Style::default()
-                .fg(theme::ACCENT)
+                .fg(theme::accent())
                 .add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(theme::DIM)
+            Style::default().fg(theme::dim())
         }
     };
     let line = Line::from(vec![
@@ -255,7 +255,7 @@ fn render_options(f: &mut Frame, app: &App, area: Rect) {
         Span::styled("load diff", label_style(focused_submit)),
         Span::styled(
             "    (Tab to a field, then Enter)",
-            Style::default().fg(theme::DIM),
+            Style::default().fg(theme::dim()),
         ),
     ]);
     f.render_widget(Paragraph::new(line), area);

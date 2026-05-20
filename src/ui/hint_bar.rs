@@ -99,11 +99,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let mut spans = vec![Span::raw(" ")];
     for (i, (k, label)) in hints.iter().enumerate() {
         if i > 0 {
-            spans.push(Span::styled("  ", Style::default().fg(theme::DIM)));
+            spans.push(Span::styled("  ", Style::default().fg(theme::dim())));
         }
-        spans.push(Span::styled(*k, Style::default().fg(theme::ACCENT)));
+        spans.push(Span::styled(*k, Style::default().fg(theme::accent())));
         spans.push(Span::raw(":"));
-        spans.push(Span::styled(*label, Style::default().fg(theme::DIM)));
+        spans.push(Span::styled(*label, Style::default().fg(theme::dim())));
     }
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }

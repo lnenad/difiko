@@ -120,14 +120,17 @@ pub fn render(f: &mut Frame, _app: &App) {
         lines.push(Line::from(Span::styled(
             (*title).to_string(),
             Style::default()
-                .fg(theme::ACCENT)
+                .fg(theme::accent())
                 .add_modifier(Modifier::BOLD),
         )));
         for (k, label) in rows {
             lines.push(Line::from(vec![
                 Span::raw("  "),
-                Span::styled(format!("{:<22}", k), Style::default().fg(theme::ACCENT_DIM)),
-                Span::styled((*label).to_string(), Style::default().fg(theme::DIM)),
+                Span::styled(
+                    format!("{:<22}", k),
+                    Style::default().fg(theme::accent_dim()),
+                ),
+                Span::styled((*label).to_string(), Style::default().fg(theme::dim())),
             ]));
         }
     }

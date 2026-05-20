@@ -27,32 +27,32 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         Span::styled(
             " difiko ",
             Style::default()
-                .fg(theme::ACCENT)
+                .fg(theme::accent())
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("│ ", Style::default().fg(theme::DIM)),
+        Span::styled("│ ", Style::default().fg(theme::dim())),
         Span::styled("repo: ", theme::label_style()),
         Span::raw(repo),
-        Span::styled(" │ ", Style::default().fg(theme::DIM)),
+        Span::styled(" │ ", Style::default().fg(theme::dim())),
         Span::styled("base: ", theme::label_style()),
         Span::raw(base),
-        Span::styled(" → ", Style::default().fg(theme::DIM)),
+        Span::styled(" → ", Style::default().fg(theme::dim())),
         Span::raw(compare),
     ];
 
     if !app.files.is_empty() {
-        spans.push(Span::styled(" │ ", Style::default().fg(theme::DIM)));
+        spans.push(Span::styled(" │ ", Style::default().fg(theme::dim())));
         spans.push(Span::styled("files: ", theme::label_style()));
         spans.push(Span::raw(app.files.len().to_string()));
         spans.push(Span::raw("  "));
         spans.push(Span::styled(
             format!("+{}", app.total_additions()),
-            Style::default().fg(theme::ADD),
+            Style::default().fg(theme::add()),
         ));
         spans.push(Span::raw(" "));
         spans.push(Span::styled(
             format!("-{}", app.total_deletions()),
-            Style::default().fg(theme::DEL),
+            Style::default().fg(theme::del()),
         ));
         spans.push(Span::raw("  "));
         spans.push(Span::styled("reviewed: ", theme::label_style()));
@@ -63,10 +63,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             .count();
         spans.push(Span::raw(format!("{}/{}", reviewed_count, app.files.len())));
         if let Some(hash) = &app.selected_commit {
-            spans.push(Span::styled(" │ ", Style::default().fg(theme::DIM)));
+            spans.push(Span::styled(" │ ", Style::default().fg(theme::dim())));
             spans.push(Span::styled(
                 format!("filtered by {}", &hash[..hash.len().min(8)]),
-                Style::default().fg(theme::ACCENT),
+                Style::default().fg(theme::accent()),
             ));
         }
     }
@@ -80,7 +80,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         let frame = frames[(app.spinner_tick as usize) % frames.len()];
         spans.push(Span::styled(
             format!("  {frame} loading"),
-            Style::default().fg(theme::ACCENT),
+            Style::default().fg(theme::accent()),
         ));
     }
 

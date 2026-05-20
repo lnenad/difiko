@@ -259,6 +259,20 @@ Toggle at runtime with **W** (word diff) and **S** (syntax). Both default
 on. CLI flags `--no-word-diff` and `--no-syntax` override the file for a
 single session without persisting.
 
+### Theme
+
+Colors are overridable via `theme.json`, alongside `config.json` in the
+same directory. Open it with the `edit-theme` entry in the `:` command
+palette — difiko writes a populated default file (every key with its
+built-in value), opens it in your OS default app for `.json` files, and
+toasts a reminder that **changes require a restart**.
+
+Every value is a color string: a ratatui name (`cyan`, `darkgray`,
+`lightred`, ...), `reset` for the terminal default, `#RRGGBB` hex,
+`rgb(r, g, b)` decimal, or a `0..255` index for the 256-color palette.
+Delete any key to keep the default; an unrecognised value in any field
+falls back to the whole defaults and surfaces a toast on next launch.
+
 ## Persistence
 
 Reviewed-files state is saved to:

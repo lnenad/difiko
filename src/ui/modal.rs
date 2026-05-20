@@ -36,7 +36,7 @@ pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title(format!(" {title} "))
-        .border_style(Style::default().fg(theme::ACCENT));
+        .border_style(Style::default().fg(theme::accent()));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -46,10 +46,10 @@ pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
         .split(inner);
 
     let mut input_spans = vec![
-        Span::styled("> ", Style::default().fg(theme::ACCENT)),
+        Span::styled("> ", Style::default().fg(theme::accent())),
         Span::raw(picker.query.buffer.clone()),
     ];
-    input_spans.push(Span::styled("█", Style::default().fg(theme::ACCENT)));
+    input_spans.push(Span::styled("█", Style::default().fg(theme::accent())));
     f.render_widget(Paragraph::new(Line::from(input_spans)), chunks[0]);
 
     let items: Vec<ListItem> = picker
@@ -62,8 +62,8 @@ pub fn render_picker(f: &mut Frame, title: &str, picker: &Picker) {
     // a subtle background tint is imperceptible.
     let list = List::new(items).highlight_symbol("▶ ").highlight_style(
         Style::default()
-            .fg(theme::ACCENT)
-            .bg(theme::HIGHLIGHT_BG)
+            .fg(theme::accent())
+            .bg(theme::highlight_bg())
             .add_modifier(Modifier::BOLD),
     );
     let mut state = ListState::default();
@@ -79,10 +79,10 @@ pub fn render_error(f: &mut Frame, message: &str) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title(" Error ")
-        .border_style(Style::default().fg(theme::DEL));
+        .border_style(Style::default().fg(theme::del()));
     let inner = block.inner(area);
     f.render_widget(block, area);
-    let p = Paragraph::new(message.to_string()).style(Style::default().fg(theme::DEL));
+    let p = Paragraph::new(message.to_string()).style(Style::default().fg(theme::del()));
     f.render_widget(p, inner);
 }
 
@@ -91,7 +91,7 @@ pub fn render_text_modal(f: &mut Frame, area: Rect, title: &str, lines: Vec<Line
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
-        .border_style(Style::default().fg(theme::ACCENT));
+        .border_style(Style::default().fg(theme::accent()));
     let inner = block.inner(area);
     f.render_widget(block, area);
     f.render_widget(Paragraph::new(lines), inner);

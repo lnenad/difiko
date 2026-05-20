@@ -18,7 +18,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     if app.commits.is_empty() {
         let p = ratatui::widgets::Paragraph::new("No commits in range.")
-            .style(Style::default().fg(theme::DIM));
+            .style(Style::default().fg(theme::dim()));
         f.render_widget(p, inner);
         return;
     }
@@ -31,18 +31,22 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             let header_spans = vec![
                 Span::styled(
                     if selected { "● " } else { "  " },
-                    Style::default().fg(if selected { theme::ACCENT } else { theme::DIM }),
+                    Style::default().fg(if selected {
+                        theme::accent()
+                    } else {
+                        theme::dim()
+                    }),
                 ),
                 Span::styled(
                     format!("{} ", c.short_hash),
                     Style::default()
-                        .fg(theme::ACCENT_DIM)
+                        .fg(theme::accent_dim())
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw(c.subject.clone()),
                 Span::styled(
                     format!("  {}  {}", c.author, c.date),
-                    Style::default().fg(theme::DIM),
+                    Style::default().fg(theme::dim()),
                 ),
             ];
             let mut lines: Vec<Line> = vec![Line::from(header_spans)];
@@ -50,7 +54,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
                 for body_line in c.body.lines() {
                     lines.push(Line::from(Span::styled(
                         format!("    {body_line}"),
-                        Style::default().fg(theme::DIM),
+                        Style::default().fg(theme::dim()),
                     )));
                 }
             }

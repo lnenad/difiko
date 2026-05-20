@@ -45,6 +45,38 @@ true. Loaded once in `App::new`; CLI flags `--no-word-diff` /
 `--no-syntax` force-off per session without rewriting the file. The `W`
 and `S` keybindings flip the flags and persist via `Config::save()`.
 
+### Theme overrides
+
+`src/ui/theme/config.rs` reads `<ProjectDirs::config_dir>/theme.json`
+once in `main.rs` and parks it in a `OnceLock` via `theme::init`. Every
+overridable color has a `pub fn` accessor in `src/ui/theme/mod.rs` —
+e.g. `theme::accent()` returns `t().accent.unwrap_or(Color::Cyan)`.
+Defaults stay in the function body so the file with no overrides is
+indistinguishable from a missing file.
+
+Schema keys: `bg`, `fg`, `dim`, `accent`, `accent_dim`, `add`, `del`,
+`hunk`, `add_bg`, `del_bg`, `add_bg_strong`, `del_bg_strong`,
+`status_add`, `status_mod`, `status_del`, `status_ren`, `highlight_bg`,
+`highlight_bg_dim`, `search_current_bg`, `search_current_fg`,
+`search_other_bg`, `search_other_fg`. Each value is a color string
+parsed by `theme::config::parse_color`: a ratatui name (`cyan`,
+`darkgray`, ...), `reset`, `#RRGGBB`, `rgb(r, g, b)`, or `0..255` for
+the 256-color palette. Unknown values are a parse error and the whole
+file falls back to defaults (toast on startup).
+
+Users open `theme.json` via the `edit-theme` entry in the `:` command
+palette. The handler in `event::modal::edit_theme` writes a populated
+default file if none exists, then hands the path to
+`open_file::open_in_default_app` (Windows `cmd /c start`, macOS `open`,
+Linux `xdg-open`). Theme changes require a restart — `OnceLock` is
+write-once on purpose so render code can call `theme::accent()` without
+locking.
+
+When adding a new themable color: add a field to `Theme` in
+`config.rs`, add an accessor in `mod.rs` with the default inline, and
+add a line to `default_template()` so the populated `theme.json` keeps
+covering every key.
+
 ### Diff rendering layers
 
 `ui/diff_view.rs::push_layered` composes three optional layers over a

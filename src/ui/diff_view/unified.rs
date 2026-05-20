@@ -19,12 +19,12 @@ pub(super) fn render_unified(
 ) {
     if file.binary {
         let p = Paragraph::new("Binary file — no diff to display.")
-            .style(Style::default().fg(theme::DIM));
+            .style(Style::default().fg(theme::dim()));
         f.render_widget(p, area);
         return;
     }
     if file.diff_lines.is_empty() {
-        let p = Paragraph::new("No diff content.").style(Style::default().fg(theme::DIM));
+        let p = Paragraph::new("No diff content.").style(Style::default().fg(theme::dim()));
         f.render_widget(p, area);
         return;
     }
@@ -61,7 +61,7 @@ pub fn build_unified_lines(file: &FileChange, ctx: &DiffRenderCtx<'_>) -> Vec<Li
                     &mut spans,
                     header,
                     Style::default()
-                        .fg(theme::HUNK)
+                        .fg(theme::hunk())
                         .add_modifier(Modifier::BOLD),
                     None,
                     None,
@@ -77,7 +77,7 @@ pub fn build_unified_lines(file: &FileChange, ctx: &DiffRenderCtx<'_>) -> Vec<Li
                 let base = add_base_style(syntax_on);
                 spans.push(Span::styled(
                     format!("{:>5} {:>5} + ", "", new_no),
-                    Style::default().fg(theme::ADD),
+                    Style::default().fg(theme::add()),
                 ));
                 push_layered(
                     &mut spans,
@@ -98,7 +98,7 @@ pub fn build_unified_lines(file: &FileChange, ctx: &DiffRenderCtx<'_>) -> Vec<Li
                 let base = del_base_style(syntax_on);
                 spans.push(Span::styled(
                     format!("{:>5} {:>5} - ", old_no, ""),
-                    Style::default().fg(theme::DEL),
+                    Style::default().fg(theme::del()),
                 ));
                 push_layered(
                     &mut spans,
@@ -132,13 +132,13 @@ pub fn build_unified_lines(file: &FileChange, ctx: &DiffRenderCtx<'_>) -> Vec<Li
             DiffLine::NoNewline(text) => {
                 lines.push(Line::from(Span::styled(
                     text.clone(),
-                    Style::default().fg(theme::DIM),
+                    Style::default().fg(theme::dim()),
                 )));
             }
             DiffLine::Binary(text) => {
                 lines.push(Line::from(Span::styled(
                     text.clone(),
-                    Style::default().fg(theme::DIM),
+                    Style::default().fg(theme::dim()),
                 )));
             }
             _ => {}

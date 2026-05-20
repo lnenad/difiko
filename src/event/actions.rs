@@ -47,6 +47,7 @@ pub(super) fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSende
                 "unified-diff".into(),
                 "toggle-word-diff".into(),
                 "toggle-syntax".into(),
+                "edit-theme".into(),
                 "quit".into(),
             ];
             app.modal = Some(Modal::CommandPalette {

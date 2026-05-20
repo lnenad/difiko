@@ -1,7 +1,36 @@
 use super::loaders::{kick_off_load_commits, kick_off_load_diff, picker_items_for};
 use super::AppEvent;
 use crate::app::{App, BranchSlot, FocusedPane, Modal, Picker, Screen, ToastKind};
+use crate::open_file;
+use crate::ui::theme;
 use tokio::sync::mpsc::UnboundedSender;
+
+/// Ensure theme.json exists (populated with current defaults), then hand
+/// it to the OS default app. We launch a graphical handler rather than
+/// $EDITOR because $EDITOR inside our terminal would fight the TUI for
+/// the screen.
+fn edit_theme(app: &mut App) {
+    let path = match theme::ensure_default_file() {
+        Ok(p) => p,
+        Err(e) => {
+            app.toast(
+                format!("could not create theme.json: {e}"),
+                ToastKind::Error,
+            );
+            return;
+        }
+    };
+    match open_file::open_in_default_app(&path) {
+        Ok(()) => app.toast(
+            format!(
+                "Opened {} — restart difiko to apply changes",
+                path.display()
+            ),
+            ToastKind::Info,
+        ),
+        Err(e) => app.toast(format!("could not open theme.json: {e}"), ToastKind::Error),
+    }
+}
 
 pub(super) enum ModalInputOp {
     Insert(char),
@@ -132,6 +161,7 @@ pub(super) fn run_command(app: &mut App, cmd: &str, tx: &UnboundedSender<AppEven
                 ToastKind::Info,
             );
         }
+        "edit-theme" => edit_theme(app),
         "quit" => app.should_quit = true,
         _ => {}
     }
