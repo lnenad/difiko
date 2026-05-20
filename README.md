@@ -177,6 +177,7 @@ in context. The highlights:
 | `?` / F1    | Toggle help overlay                                   |
 | `:`         | Command palette (Review / Fullscreen)                 |
 | `Ctrl-t`    | Edit `theme.json` in your OS default app              |
+| `Ctrl-r`    | Reload diff (current commit or base..compare)         |
 | `Ctrl-c`    | Quit (any screen)                                     |
 | `j` / `k`   | Move / scroll                                         |
 | `Tab`       | Cycle pane focus (Sidebar → Diff → Commits)           |

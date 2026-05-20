@@ -18,6 +18,10 @@ pub fn render(f: &mut Frame, _app: &App) {
                     "edit theme.json in OS default app  (restart to apply)",
                 ),
                 (
+                    "Ctrl-r",
+                    "reload current view  (selected commit's diff, or base..compare)",
+                ),
+                (
                     "q",
                     "quit  (Review only — typeable in Repo field, exits fullscreen otherwise)",
                 ),
@@ -64,7 +68,10 @@ pub fn render(f: &mut Frame, _app: &App) {
                 ("W", "toggle word diff highlighting"),
                 ("S", "toggle syntax highlighting"),
                 ("F", "fullscreen current file"),
-                ("r", "reload diff"),
+                (
+                    "r  /  Ctrl-r",
+                    "reload diff  (Ctrl-r also reloads commit diffs)",
+                ),
                 ("B", "branch picker"),
                 (
                     "R",

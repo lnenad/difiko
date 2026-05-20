@@ -101,12 +101,15 @@ pub fn dispatch_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
     if app.modal.is_some() {
         return modal::modal_key(app, key);
     }
-    // Ctrl+T opens theme.json no matter which screen we're on. Lives here,
-    // above the search bar / per-screen handlers, so a stray Char(c)
-    // catch-all (e.g. Setup's Base/Compare arm, the diff search query)
-    // can't swallow it before it reaches the EditTheme path.
+    // Global Ctrl chords. Lives above the search bar / per-screen handlers
+    // so a stray Char(c) catch-all (e.g. Setup's Base/Compare arm, the
+    // diff search query, the modal picker) can't swallow them. Skip on
+    // Setup if the binding only makes sense once a diff exists.
     if ctrl(&key, 't') {
         return Some(KeyAction::EditTheme);
+    }
+    if ctrl(&key, 'r') && !matches!(app.screen, Screen::Setup) {
+        return Some(KeyAction::ReloadDiff);
     }
     // Diff search bar — active in Review (when Diff is focused) and Fullscreen.
     // Captures most input so typing edits the query rather than triggering

@@ -172,8 +172,21 @@ pub(super) fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSende
             }
         }
         ReloadDiff => {
-            kick_off_load_diff(app, tx);
+            // Smart reload: when a commit is selected, refresh *that* commit's
+            // diff (clearing the cache so it actually re-fetches). Otherwise
+            // re-fetch the base..compare diff. Commits list always refreshes
+            // — branches may have moved since the session started.
+            if let Some(hash) = app.selected_commit.clone() {
+                app.commit_diff_cache.remove(&hash);
+                if let Some(repo) = app.repo_path.clone() {
+                    let req_id = app.start_commit_diff_load(hash.clone());
+                    tasks::spawn_load_commit_diff(tx.clone(), req_id, repo, hash);
+                }
+            } else {
+                kick_off_load_diff(app, tx);
+            }
             kick_off_load_commits(app, tx);
+            app.toast("Reloading diff…", ToastKind::Info);
         }
         ScrollDiff(delta) => {
             scroll_diff(app, delta);
