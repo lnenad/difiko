@@ -33,7 +33,11 @@ pub(super) fn diff_search_key(key: KeyEvent) -> Option<KeyAction> {
             }
         }
         KeyCode::Backspace => Some(KeyAction::DiffSearchBackspace),
-        KeyCode::Char(c) => Some(KeyAction::DiffSearchInput(c)),
+        // Only insert bare/Shifted characters into the query. Ctrl/Alt
+        // combos fall through so global chords (Ctrl+T, ...) still fire.
+        KeyCode::Char(c) if key.modifiers.is_empty() || key.modifiers == KeyModifiers::SHIFT => {
+            Some(KeyAction::DiffSearchInput(c))
+        }
         _ => None,
     }
 }

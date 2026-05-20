@@ -14,6 +14,10 @@ pub fn render(f: &mut Frame, _app: &App) {
                 (":", "command palette  (Review / Fullscreen)"),
                 ("Ctrl-c", "quit from any screen"),
                 (
+                    "Ctrl-t",
+                    "edit theme.json in OS default app  (restart to apply)",
+                ),
+                (
                     "q",
                     "quit  (Review only — typeable in Repo field, exits fullscreen otherwise)",
                 ),

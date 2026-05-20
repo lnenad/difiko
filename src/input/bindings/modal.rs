@@ -15,12 +15,17 @@ pub(super) fn modal_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
         KeyCode::Up => Some(KeyAction::ModalMoveUp),
         KeyCode::Down => Some(KeyAction::ModalMoveDown),
         KeyCode::Backspace if !is_overlay => Some(KeyAction::ModalInputBackspace),
-        KeyCode::Char(c) if !is_overlay => {
-            if c == 'c' && key.modifiers.contains(KeyModifiers::CONTROL) {
-                Some(KeyAction::Quit)
-            } else {
-                Some(KeyAction::ModalInputChar(c))
-            }
+        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(KeyAction::Quit)
+        }
+        // Only bare/Shifted chars type into the picker query. Ctrl/Alt
+        // combos are ignored here so they don't insert stray letters
+        // (e.g. Ctrl+T should NOT type 't' into the filter).
+        KeyCode::Char(c)
+            if !is_overlay
+                && (key.modifiers.is_empty() || key.modifiers == KeyModifiers::SHIFT) =>
+        {
+            Some(KeyAction::ModalInputChar(c))
         }
         _ => None,
     }

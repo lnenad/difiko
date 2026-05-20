@@ -9,7 +9,7 @@ use tokio::sync::mpsc::UnboundedSender;
 /// it to the OS default app. We launch a graphical handler rather than
 /// $EDITOR because $EDITOR inside our terminal would fight the TUI for
 /// the screen.
-fn edit_theme(app: &mut App) {
+pub(super) fn edit_theme(app: &mut App) {
     let path = match theme::ensure_default_file() {
         Ok(p) => p,
         Err(e) => {

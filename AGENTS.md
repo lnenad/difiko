@@ -61,16 +61,23 @@ Schema keys: `bg`, `fg`, `dim`, `accent`, `accent_dim`, `add`, `del`,
 `search_other_bg`, `search_other_fg`. Each value is a color string
 parsed by `theme::config::parse_color`: a ratatui name (`cyan`,
 `darkgray`, ...), `reset`, `#RRGGBB`, `rgb(r, g, b)`, or `0..255` for
-the 256-color palette. Unknown values are a parse error and the whole
-file falls back to defaults (toast on startup).
+the 256-color palette. Keys beginning with `_` are ignored — the
+populated default template uses `_comment` to embed format help.
+
+`theme::load()` is *lenient* and infallible: bad keys, wrong types,
+unknown color names, even a malformed top-level JSON value all fall
+back to defaults instead of blocking startup. The returned
+`ThemeLoad { theme, issues }` carries a per-key list of problems —
+`main.rs` toasts each one on the first frame so the user sees exactly
+which overrides aren't being honoured.
 
 Users open `theme.json` via the `edit-theme` entry in the `:` command
-palette. The handler in `event::modal::edit_theme` writes a populated
-default file if none exists, then hands the path to
-`open_file::open_in_default_app` (Windows `cmd /c start`, macOS `open`,
-Linux `xdg-open`). Theme changes require a restart — `OnceLock` is
-write-once on purpose so render code can call `theme::accent()` without
-locking.
+palette, or with `Ctrl+T` from Review / Fullscreen. The handler in
+`event::modal::edit_theme` writes a populated default file if none
+exists, then hands the path to `open_file::open_in_default_app`
+(Windows `cmd /c start`, macOS `open`, Linux `xdg-open`). Theme changes
+require a restart — `OnceLock` is write-once on purpose so render code
+can call `theme::accent()` without locking.
 
 When adding a new themable color: add a field to `Theme` in
 `config.rs`, add an accessor in `mod.rs` with the default inline, and

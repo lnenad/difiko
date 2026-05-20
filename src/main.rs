@@ -8,22 +8,15 @@ async fn main() -> anyhow::Result<()> {
     if cli.new_window {
         return new_window::relaunch_in_new_window();
     }
-    // Load the user's theme overrides before the first render so colors are
-    // baked in. A malformed theme.json falls back to the built-in palette
-    // and surfaces as a toast once the App is up.
-    let theme_err = match theme::load() {
-        Ok(t) => {
-            theme::init(t);
-            None
-        }
-        Err(e) => Some(e),
-    };
+    // Load the user's theme overrides before the first render so colors
+    // are baked in. The loader never fails: bad keys / unparseable color
+    // values / broken JSON all fall back to defaults and surface as
+    // per-issue toasts on first frame.
+    let theme_load = theme::load();
+    theme::init(theme_load.theme);
     let mut app = app::App::new(&cli);
-    if let Some(e) = theme_err {
-        app.toast(
-            format!("theme.json failed to load, using defaults: {e}"),
-            app::ToastKind::Error,
-        );
+    for issue in &theme_load.issues {
+        app.toast(format!("theme.json: {issue}"), app::ToastKind::Error);
     }
     event::run(app).await
 }

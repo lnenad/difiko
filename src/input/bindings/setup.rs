@@ -7,6 +7,10 @@ pub(super) fn setup_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
     if ctrl(&key, 'c') {
         return Some(KeyAction::Quit);
     }
+    // Bare-letter shortcuts (open picker, toggle remote, type into the repo
+    // field) must not fire on Ctrl/Alt+letter. Shift is allowed so uppercase
+    // letters still type into the repo field.
+    let typing_modifiers = key.modifiers.is_empty() || key.modifiers == KeyModifiers::SHIFT;
     let field = app.setup_field;
     let editing_repo = matches!(field, Repo);
 
@@ -46,10 +50,10 @@ pub(super) fn setup_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
             KeyCode::Left => Some(KeyAction::SetupCursorLeft),
             KeyCode::Right => Some(KeyAction::SetupCursorRight),
             KeyCode::Backspace => Some(KeyAction::SetupBackspace),
-            KeyCode::Char(c) => Some(KeyAction::SetupTextInput(c)),
+            KeyCode::Char(c) if typing_modifiers => Some(KeyAction::SetupTextInput(c)),
             _ => None,
         },
-        Base | Compare => {
+        Base | Compare if typing_modifiers => {
             let slot = if matches!(field, Base) {
                 crate::app::BranchSlot::Base
             } else {
@@ -66,15 +70,18 @@ pub(super) fn setup_key(app: &App, key: KeyEvent) -> Option<KeyAction> {
                 _ => None,
             }
         }
-        Remote => match key.code {
+        Base | Compare => None,
+        Remote if typing_modifiers => match key.code {
             KeyCode::Enter | KeyCode::Char(' ') | KeyCode::Char('r') => {
                 Some(KeyAction::SetupToggleRemote)
             }
             _ => None,
         },
-        Submit => match key.code {
+        Remote => None,
+        Submit if typing_modifiers => match key.code {
             KeyCode::Enter | KeyCode::Char(' ') => Some(KeyAction::SetupSubmit),
             _ => None,
         },
+        Submit => None,
     }
 }

@@ -262,10 +262,10 @@ single session without persisting.
 ### Theme
 
 Colors are overridable via `theme.json`, alongside `config.json` in the
-same directory. Open it with the `edit-theme` entry in the `:` command
-palette — difiko writes a populated default file (every key with its
-built-in value), opens it in your OS default app for `.json` files, and
-toasts a reminder that **changes require a restart**.
+same directory. Open it with **Ctrl+T** (or the `edit-theme` entry in the
+`:` command palette) — difiko writes a populated default file (every key
+with its built-in value), opens it in your OS default app for `.json`
+files, and toasts a reminder that **changes require a restart**.
 
 Every value is a color string: a ratatui name (`cyan`, `darkgray`,
 `lightred`, ...), `reset` for the terminal default, `#RRGGBB` hex,

@@ -1,7 +1,7 @@
 use super::loaders::{
     kick_off_load_branches, kick_off_load_commits, kick_off_load_diff, picker_items_for,
 };
-use super::modal::{handle_modal_accept, modal_input, modal_move, ModalInputOp};
+use super::modal::{edit_theme, handle_modal_accept, modal_input, modal_move, ModalInputOp};
 use super::mouse::{move_commits, move_sidebar, scroll_diff, scroll_diff_h};
 use super::setup::{handle_setup_submit, next_field, prev_field};
 use super::AppEvent;
@@ -113,6 +113,7 @@ pub(super) fn apply_action(app: &mut App, action: KeyAction, tx: &UnboundedSende
                 ToastKind::Info,
             );
         }
+        EditTheme => edit_theme(app),
         EnterFullscreen => {
             if let Some(idx) = app.current_file_index() {
                 app.fullscreen_idx = idx;

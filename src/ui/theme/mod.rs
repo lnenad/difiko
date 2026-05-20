@@ -6,7 +6,7 @@
 
 mod config;
 
-pub use config::{ensure_default_file, load, theme_path, Theme};
+pub use config::{ensure_default_file, load, theme_path, Theme, ThemeLoad};
 
 use ratatui::style::{Color, Modifier, Style};
 use std::sync::OnceLock;
@@ -24,28 +24,28 @@ fn t() -> &'static Theme {
 }
 
 pub fn bg() -> Color {
-    t().bg.map(|c| c.0).unwrap_or(Color::Reset)
+    t().bg.unwrap_or(Color::Reset)
 }
 pub fn fg() -> Color {
-    t().fg.map(|c| c.0).unwrap_or(Color::Reset)
+    t().fg.unwrap_or(Color::Reset)
 }
 pub fn dim() -> Color {
-    t().dim.map(|c| c.0).unwrap_or(Color::DarkGray)
+    t().dim.unwrap_or(Color::DarkGray)
 }
 pub fn accent() -> Color {
-    t().accent.map(|c| c.0).unwrap_or(Color::Cyan)
+    t().accent.unwrap_or(Color::Cyan)
 }
 pub fn accent_dim() -> Color {
-    t().accent_dim.map(|c| c.0).unwrap_or(Color::Blue)
+    t().accent_dim.unwrap_or(Color::Blue)
 }
 pub fn add() -> Color {
-    t().add.map(|c| c.0).unwrap_or(Color::Green)
+    t().add.unwrap_or(Color::Green)
 }
 pub fn del() -> Color {
-    t().del.map(|c| c.0).unwrap_or(Color::Red)
+    t().del.unwrap_or(Color::Red)
 }
 pub fn hunk() -> Color {
-    t().hunk.map(|c| c.0).unwrap_or(Color::Magenta)
+    t().hunk.unwrap_or(Color::Magenta)
 }
 /// Subtle dark tints for add/del rows when syntax highlighting is on.
 /// 24-bit truecolor — macOS Terminal.app users won't see the bg (it
@@ -54,63 +54,55 @@ pub fn hunk() -> Color {
 /// Windows Terminal palettes; tuning by exact Rgb is the only way to
 /// stay subtle across terminals that do render truecolor.
 pub fn add_bg() -> Color {
-    t().add_bg.map(|c| c.0).unwrap_or(Color::Rgb(15, 40, 15))
+    t().add_bg.unwrap_or(Color::Rgb(15, 40, 15))
 }
 pub fn del_bg() -> Color {
-    t().del_bg.map(|c| c.0).unwrap_or(Color::Rgb(55, 15, 15))
+    t().del_bg.unwrap_or(Color::Rgb(55, 15, 15))
 }
 /// Stronger tints painted over the changed bytes within an add/del line
 /// (word-diff overlay). Same two-tier scheme delta and most modern diff
 /// viewers use: subtle for the whole line, stronger for the precise edit.
 pub fn add_bg_strong() -> Color {
-    t().add_bg_strong
-        .map(|c| c.0)
-        .unwrap_or(Color::Rgb(30, 95, 30))
+    t().add_bg_strong.unwrap_or(Color::Rgb(30, 95, 30))
 }
 pub fn del_bg_strong() -> Color {
-    t().del_bg_strong
-        .map(|c| c.0)
-        .unwrap_or(Color::Rgb(140, 30, 30))
+    t().del_bg_strong.unwrap_or(Color::Rgb(140, 30, 30))
 }
 pub fn status_add() -> Color {
-    t().status_add.map(|c| c.0).unwrap_or(Color::Green)
+    t().status_add.unwrap_or(Color::Green)
 }
 pub fn status_mod() -> Color {
-    t().status_mod.map(|c| c.0).unwrap_or(Color::Yellow)
+    t().status_mod.unwrap_or(Color::Yellow)
 }
 pub fn status_del() -> Color {
-    t().status_del.map(|c| c.0).unwrap_or(Color::Red)
+    t().status_del.unwrap_or(Color::Red)
 }
 pub fn status_ren() -> Color {
-    t().status_ren.map(|c| c.0).unwrap_or(Color::Magenta)
+    t().status_ren.unwrap_or(Color::Magenta)
 }
 /// Background used by `highlight_style()` / `dim_highlight_style()` and
 /// the modal-picker row highlight.
 pub fn highlight_bg() -> Color {
-    t().highlight_bg
-        .map(|c| c.0)
-        .unwrap_or(Color::Rgb(40, 50, 70))
+    t().highlight_bg.unwrap_or(Color::Rgb(40, 50, 70))
 }
 pub fn highlight_bg_dim() -> Color {
-    t().highlight_bg_dim
-        .map(|c| c.0)
-        .unwrap_or(Color::Rgb(30, 35, 50))
+    t().highlight_bg_dim.unwrap_or(Color::Rgb(30, 35, 50))
 }
 /// Diff-search highlight: the *current* match overrides all other
 /// styling with a strong magenta-on-white block.
 pub fn search_current_bg() -> Color {
-    t().search_current_bg.map(|c| c.0).unwrap_or(Color::Magenta)
+    t().search_current_bg.unwrap_or(Color::Magenta)
 }
 pub fn search_current_fg() -> Color {
-    t().search_current_fg.map(|c| c.0).unwrap_or(Color::White)
+    t().search_current_fg.unwrap_or(Color::White)
 }
 /// Other (non-current) matches use a softer yellow-on-black so they're
 /// visible but don't compete with the active match.
 pub fn search_other_bg() -> Color {
-    t().search_other_bg.map(|c| c.0).unwrap_or(Color::Yellow)
+    t().search_other_bg.unwrap_or(Color::Yellow)
 }
 pub fn search_other_fg() -> Color {
-    t().search_other_fg.map(|c| c.0).unwrap_or(Color::Black)
+    t().search_other_fg.unwrap_or(Color::Black)
 }
 
 pub fn focused_border(focused: bool) -> Style {
